@@ -3,8 +3,8 @@
 
 # To Start
  * If one hopes to use single pair of source and drain, just imporve the efficiency of Ido's code, please go here:
- https://github.com/rzhu40/ASN_simulation/blob/master/Improve%20Old%20Code/README.md
- * MatLab user guide:
+ https://github.com/rzhu40/ASN_simulation/blob/master/Improve%20Old%20Code/README.md.
+ * MatLab user guide: https://github.com/rzhu40/ASN_simulation/blob/master/MatLab/README.md.
  * Python user guide:
 
 # TO-DOs
