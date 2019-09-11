@@ -3,11 +3,13 @@
 
 # To Start
  * If one hopes to use single pair of source and drain, just imporve the efficiency of Ido's code, please go here:
- * MatLab user guide:
- * Python user guide:
+ https://github.com/rzhu40/ASN_simulation/blob/master/Improve%20Old%20Code/README.md.
+ * MatLab user guide: https://github.com/rzhu40/ASN_simulation/blob/master/MatLab/README.md.
+ * Python user guide: https://github.com/rzhu40/ASN_simulation/blob/master/Python/README.md.
 
 # TO-DOs
  * Enable network visualization in MatLab code(Left the snapshot API usable from Ido's code).
+ * Write new network generator in MatLab and Python.
  * Enable time-dependent plotting in python code (with a slider for time points).
  * Enable movie compiling in python.
  * Re-pacakage Ido's code to make a lite version with multi-electrodes enabled.
