@@ -9,6 +9,7 @@
 
 # TO-DOs
  * Enable network visualization in MatLab code(Left the snapshot API usable from Ido's code).
+ * Write new network generator in MatLab and Python.
  * Enable time-dependent plotting in python code (with a slider for time points).
  * Enable movie compiling in python.
  * Re-pacakage Ido's code to make a lite version with multi-electrodes enabled.
