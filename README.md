@@ -15,7 +15,7 @@
 
 # DO notice
  * The improvement of simulation is done based on Nodal analysis. https://www.swarthmore.edu/NatSci/echeeve1/Ref/mna/MNA3.html
- * Still need to test more for multi-electrodes simulations.
+ * Still need to test more for multi-electrodes simulations. Don't hesitate to contact me if there are any bugs or requirements.
  * The output dynamics are recording things slightly different from Ido's code (message me or feel free to record what ever data one needs from simulation).
  * Most of my codes are written in python first then MatLab. Please CONSIDER python :). 
  
