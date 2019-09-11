@@ -1,6 +1,11 @@
 # The Python User Guide
+  * The python equivalent of Ido's MatLab code is here:
+  https://github.com/rzhu40/ASN_simulation/tree/master/Python/Ido's%20method.
+  * To use the improved method please go to:
+  https://github.com/rzhu40/ASN_simulation/tree/master/Python/multiElec.
   * Again, all-in-one simulation runner is ready as: 
   https://github.com/rzhu40/ASN_simulation/blob/master/Python/multiElec/runMulti.py.
+  
   * Step-by-step guide starts with importing all the libararies:
  
     ```python
