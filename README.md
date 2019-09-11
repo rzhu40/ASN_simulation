@@ -21,5 +21,5 @@
  * The output dynamics are recording things slightly different from Ido's code (message me or feel free to record what ever data one needs from simulation).
  * Most of my codes are written in python first then MatLab. Please CONSIDER python :). 
  
-   I will upload a bench mark for comparison between python and MatLab. Most importantly, python code is plotting with plot.ly https://plot.ly/python/, which makes beautiful and **Interactive** snapshots of the network.
+   I will upload a bench mark for comparison between python and MatLab. Most importantly, python code is plotting with plot.ly https://plot.ly/python/, which makes beautiful and most importantly **Interactive** snapshots of the network.
  
