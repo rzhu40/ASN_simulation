@@ -16,7 +16,7 @@ SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);
 
 %% Simulation recording options:
 SimulationOptions.ContactMode     = 'preSet';    % 'farthest' \ 'specifiedDistance' \ 'random' (the only one relevant for 'randAdjMat' (no spatial meaning)) \ 'preSet'
-SimulationOptions.electrodes      = [73,30,83,88];
+SimulationOptions.electrodes      = [73,30];
 SimulationOptions.numOfElectrodes = length(SimulationOptions.electrodes);
 
 %% Generate Connectivity:

@@ -92,8 +92,9 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
         
         % This line can be written in a more efficient vetorized way.
         % Something like:
-        % Gmat(edgeList(:,1),edgeList(:,2)) = componentConductance;
-        % Gmat(edgeList(:,2),edgeList(:,1)) = componentConductance;
+%         Gmat(edgeList(:,1),edgeList(:,2)) = diag(componentConductance);
+%         Gmat(edgeList(:,2),edgeList(:,1)) = diag(componentConductance);
+        
         
         for i = 1:E
             Gmat(edgeList(i,1),edgeList(i,2)) = componentConductance(i);

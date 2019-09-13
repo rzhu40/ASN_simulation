@@ -12,13 +12,7 @@ class network__:
         print('Allocating data to obejcts....')
         self.gridSize = [self.connectivity.length_x, self.connectivity.length_y]
         self.junctionCurrent = self.junctionVoltage/self.junctionResistance
-        # self.networkConductance = 1/self.networkResistance
-        self.graph = nx.from_numpy_matrix(self.adjMat)
-        self.shortestPaths = [p for p in nx.all_shortest_paths(self.graph, 
-                                                            source=self.contactWires[0]-1, 
-                                                            target=self.contactWires[1]-1)]
-        self.shortestPaths = np.add(self.shortestPaths, 1)
-        
+        # self.networkConductance = 1/self.networkResistance        
         self.isOnCurrentPath()
         # self.getWireVoltage()
 

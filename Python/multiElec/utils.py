@@ -134,6 +134,7 @@ def simulateNetworkPlus(simulationOptions,
         junctionState.voltage = wireVoltage[edgeList[:,0]] - wireVoltage[edgeList[:,1]]
         junctionState.updateJunctionState(simulationOptions.dt)
 
+        Network.wireVoltage[this_time,:] = wireVoltage
         Network.electrodeCurrent[this_time,:] = sol[V:]
         Network.filamentState[this_time,:] = junctionState.filamentState
         Network.junctionVoltage[this_time,:] = junctionState.voltage
@@ -143,6 +144,11 @@ def simulateNetworkPlus(simulationOptions,
     Network.numOfWires = V
     Network.numOfJunctions = E
     Network.adjMat = connectivity.adj_matrix
+    Network.graph = nx.from_numpy_array(connectivity.adj_matrix)
+    Network.shortestPaths = [p for p in nx.all_shortest_paths(Network.graph, 
+                                                        source=Network.sources[0]-1, 
+                                                        target=Network.drains[0]-1)]
+    Network.shortestPaths = np.add(Network.shortestPaths, 1)
     Network.contactWires = simulationOptions.interfaceElectrodes
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
