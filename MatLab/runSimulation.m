@@ -12,7 +12,7 @@ SimulationOptions.seed = s;    % save
 SimulationOptions.dt = 1e-3;   % (sec)
 SimulationOptions.T  = 1e0;    % (sec) duration of simulation
 SimulationOptions.TimeVector = (SimulationOptions.dt:SimulationOptions.dt:SimulationOptions.T)';
-SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);  
+SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);
 
 %% Simulation recording options:
 SimulationOptions.ContactMode     = 'preSet';    % 'farthest' \ 'specifiedDistance' \ 'random' (the only one relevant for 'randAdjMat' (no spatial meaning)) \ 'preSet'
@@ -44,7 +44,7 @@ Components = initializeComponents(Connectivity.NumberOfEdges,Components);
 Signals = cell(SimulationOptions.numOfElectrodes,1);
 
 Stimulus1.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-Stimulus1.OnTime         = 0.0; 
+Stimulus1.OnTime         = 0.0;
 Stimulus1.OffTime        = 1.0;
 Stimulus1.AmplitudeOn    = 1.4;
 Stimulus1.AmplitudeOff   = 0.005;
@@ -55,7 +55,7 @@ Stimulus2.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ram
 Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
 
 Stimulus3.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-Stimulus3.OnTime         = 0.0; 
+Stimulus3.OnTime         = 0.0;
 Stimulus3.OffTime        = 1.0;
 Stimulus3.AmplitudeOn    = 1.4;
 Stimulus3.AmplitudeOff   = 0.005;
@@ -66,11 +66,10 @@ Signals{4,1} = getStimulus(Stimulus4, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-    [Output, SimulationOptions, snapshots, SelSims] = simulateNetwork(Connectivity, Components, Stimulus, SimulationOptions); % (Ohm)
-end
-
+[Output, SimulationOptions, snapshots, SelSims] = simulateNetwork(Connectivity, Components, Stimulus, SimulationOptions); % (Ohm)
 %Convert Zdenka's structure to Adrian's Structure:
-SelSims=Convert_Zdenka_to_Adrian(SelSims,snapshots);fprintf('\n')
+SelSims=Convert_Zdenka_to_Adrian(SelSims,snapshots);
+fprintf('\n')
 % run DataExport.m
-toc 
+toc
 %run ShowMe.m
