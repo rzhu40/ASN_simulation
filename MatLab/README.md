@@ -36,9 +36,10 @@
     Components = initializeComponents(Connectivity.NumberOfEdges,Components);
     ```
 * The most important part is to initialize electrode conditions one-by-one in the order one set up before:
-    * All electrodes has a so called *'signal'* (signal will be all zero if the electrode is a drain.).
-    * Signals are stored in (Number of Electrodes x 1) cells named as **Signals**
-    * If the electrode is a source, specify input type, amplitude, etc. Don't forget to store it in signals:
+    * All electrodes have a so called *'signal'* (signal will be all zero if the electrode is a drain.).
+    * Signals are stored in (Number of Electrodes x 1) cells named as **Signals**.
+    * If the electrode is a source, specify input type, amplitude, etc.
+      **Don't forget to store it in signals**
     ```matlab
     Stimulus1.BiasType       = 'SinglePulse';           
     Stimulus1.OnTime         = 0.0; 
