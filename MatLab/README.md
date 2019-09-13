@@ -39,7 +39,7 @@
     * All electrodes have a so called *'signal'* (signal will be all zero if the electrode is a drain.).
     * Signals are stored in (Number of Electrodes x 1) cells named as **Signals**.
     * If the electrode is a source, specify input type, amplitude, etc.
-      **Don't forget to store it in signals**
+      **Don't forget to store it in Signals**
     ```matlab
     Stimulus1.BiasType       = 'SinglePulse';           
     Stimulus1.OnTime         = 0.0; 
