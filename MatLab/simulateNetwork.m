@@ -144,7 +144,16 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     
     % Store some important fields
     SimulationOptions.SnapshotsIdx = snapshots_idx; % Save these to access the right time from .TimeVector.
-
+    OutputDynamics.sources = [];
+    OutputDynamics.drains  = [];
+    for i = 1:length(SimulationOptions.electrodes)
+        sourceChecker = sum(Signals{i,1})>0;
+        if sourceChecker
+            OutputDynamics.sources = [OutputDynamics.sources, SimulationOptions.electrodes(i)];
+        else
+            OutputDynamics.drains  = [OutputDynamics.drains, SimulationOptions.electrodes(i)];
+        end
+    end
     % Calculate network resistance and save:
     OutputDynamics.electrodeCurrent   = electrodeCurrent;
     OutputDynamics.wireVoltage        = wireVoltage;
