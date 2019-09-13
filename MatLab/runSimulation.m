@@ -66,8 +66,11 @@ Signals{4,1} = getStimulus(Stimulus4, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-[Output, SimulationOptions, snapshots] = simulateNetwork(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
-fprintf('\n')
+    [Output, SimulationOptions, snapshots, SelSims] = simulateNetwork(Connectivity, Components, Stimulus, SimulationOptions); % (Ohm)
+end
+
+%Convert Zdenka's structure to Adrian's Structure:
+SelSims=Convert_Zdenka_to_Adrian(SelSims,snapshots);fprintf('\n')
 % run DataExport.m
 toc 
 %run ShowMe.m
