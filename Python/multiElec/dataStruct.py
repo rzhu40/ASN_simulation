@@ -142,8 +142,10 @@ class nanowire__:
             for i in range(network.TimeVector.size):
                 self.wireCurrents[i,:] = np.cumsum(network.junctionCurrent[i,np.add(sortedContactJunctions[0:-1], -1)]*direction[0:-1])
 
-            self.sectionCenterX = np.append(self.sectionCenterX, np.mean([xi[np.add(sortedContactJunctions[0:-1], -1)], xi[np.add(sortedContactJunctions[1:], -1)]], axis = 0))
-            self.sectionCenterY = np.append(self.sectionCenterY, np.mean([yi[np.add(sortedContactJunctions[0:-1], -1)], yi[np.add(sortedContactJunctions[1:], -1)]], axis = 0))
+            # self.sectionCenterX = np.append(self.sectionCenterX, np.mean([xi[np.add(sortedContactJunctions[0:-1], -1)], xi[np.add(sortedContactJunctions[1:], -1)]], axis = 0))
+            # self.sectionCenterY = np.append(self.sectionCenterY, np.mean([yi[np.add(sortedContactJunctions[0:-1], -1)], yi[np.add(sortedContactJunctions[1:], -1)]], axis = 0))
+            self.sectionCenterX = np.mean([xi[np.add(sortedContactJunctions[0:-1], -1)], xi[np.add(sortedContactJunctions[1:], -1)]], axis = 0)
+            self.sectionCenterY = np.mean([yi[np.add(sortedContactJunctions[0:-1], -1)], yi[np.add(sortedContactJunctions[1:], -1)]], axis = 0)
             self.sectionCurrentX = np.cos(self.wireAngle) * self.wireCurrents
             self.sectionCurrentY = np.sin(self.wireAngle) * self.wireCurrents
 
@@ -160,7 +162,7 @@ class nanowire__:
                     else :
                         self.contactEnd = [xa, ya]
                 else:
-                    if ya[index-1] < yb[index-1]:
+                    if ya < yb:
                         self.contactEnd = [xb, yb]
                     else:
                         self.contactEnd = [xa, ya]
