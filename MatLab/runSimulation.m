@@ -10,13 +10,13 @@ s = rng;
 %% Simulation general options:
 SimulationOptions.seed = s;    % save
 SimulationOptions.dt = 1e-3;   % (sec)
-SimulationOptions.T  = 1e0;    % (sec) duration of simulation
+SimulationOptions.T  = 1e1;    % (sec) duration of simulation
 SimulationOptions.TimeVector = (SimulationOptions.dt:SimulationOptions.dt:SimulationOptions.T)';
 SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);  
 
 %% Simulation recording options:
 SimulationOptions.ContactMode     = 'preSet';    % 'farthest' \ 'specifiedDistance' \ 'random' (the only one relevant for 'randAdjMat' (no spatial meaning)) \ 'preSet'
-SimulationOptions.electrodes      = [73,30, 83,88];
+SimulationOptions.electrodes      = [73,30];
 SimulationOptions.numOfElectrodes = length(SimulationOptions.electrodes);
 
 %% Generate Connectivity:
@@ -51,8 +51,19 @@ Stimulus1.AmplitudeOff   = 0.005;
 Signals{1,1} = getStimulus(Stimulus1, SimulationOptions);
 
 
-Stimulus2.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
+% Stimulus2.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
+% Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
+
+Stimulus2.BiasType       = 'SinglePulse';
+Stimulus2.OnTime         = 2.0; 
+Stimulus2.OffTime        = 3.0;
+Stimulus2.AmplitudeOn    = -1.4;
+Stimulus2.AmplitudeOff   = -0.005;
 Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
+
+
+
+
 
 Stimulus3.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
 Stimulus3.OnTime         = 0.0; 

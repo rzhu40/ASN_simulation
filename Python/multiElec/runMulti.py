@@ -11,11 +11,11 @@ which starts from 1.
 SimulationOptions = simulation_options__(dt = 1e-3, T = 1,
                                         interfaceElectrodes = [73, 30, 88, 83])
 
-Connectivity = connectivity__(
-    filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat')
-
 # Connectivity = connectivity__(
-#     filename = '2016-09-08-155044_asn_nw_00700_nj_14533_seed_042_avl_100.00_disp_10.00.mat')
+#     filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat')
+
+Connectivity = connectivity__(
+    filename = '2016-09-08-155044_asn_nw_00700_nj_14533_seed_042_avl_100.00_disp_10.00.mat')
 
 SimulationOptions.stimulus = []
 tempStimulus = stimulus__(biasType = 'DC', 
