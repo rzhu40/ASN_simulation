@@ -29,7 +29,7 @@ switch Connectivity.WhichMatrix
         Connectivity.NumberOfNodes = 30;
         Connectivity.AverageDegree = 10;
 end
-Connectivity = getConnectivity(Connectivity);
+Connectivity = getConnectivityMulti(Connectivity);
 
 %% Choose  contacts:
 if strcmp(SimulationOptions.ContactMode, 'specifiedDistance')
@@ -38,7 +38,7 @@ end
 
 %% Initialize dynamic components:
 Components.ComponentType       = 'atomicSwitch'; % 'atomicSwitch' \ 'memristor' \ 'resistor'
-Components = initializeComponents(Connectivity.NumberOfEdges,Components);
+Components = initializeComponentsMulti(Connectivity.NumberOfEdges,Components);
 
 %% Initialize stimulus:
 Signals = cell(SimulationOptions.numOfElectrodes,1);
@@ -48,25 +48,25 @@ Stimulus1.OnTime         = 0.0;
 Stimulus1.OffTime        = 1.0;
 Stimulus1.AmplitudeOn    = 1.4;
 Stimulus1.AmplitudeOff   = 0.005;
-Signals{1,1} = getStimulus(Stimulus1, SimulationOptions);
+Signals{1,1} = getStimulusMulti(Stimulus1, SimulationOptions);
 
 
 Stimulus2.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
+Signals{2,1} = getStimulusMulti(Stimulus2, SimulationOptions);
 
 Stimulus3.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
 Stimulus3.OnTime         = 0.0;
 Stimulus3.OffTime        = 1.0;
 Stimulus3.AmplitudeOn    = 1.4;
 Stimulus3.AmplitudeOff   = 0.005;
-Signals{3,1} = getStimulus(Stimulus3, SimulationOptions);
+Signals{3,1} = getStimulusMulti(Stimulus3, SimulationOptions);
 
 Stimulus4.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-Signals{4,1} = getStimulus(Stimulus4, SimulationOptions);
+Signals{4,1} = getStimulusMulti(Stimulus4, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-[Output, SimulationOptions, snapshots, SelSims] = simulateNetwork(Connectivity, Components, Stimulus, SimulationOptions); % (Ohm)
+[Output, SimulationOptions, snapshots, SelSims] = simulateNetworkMulti(Connectivity, Components, Stimulus, SimulationOptions); % (Ohm)
 %Convert Zdenka's structure to Adrian's Structure:
 SelSims=Convert_Zdenka_to_Adrian(SelSims,snapshots,SimulationOptions,Connectivity,Components,Stimulus);
 fprintf('\n')
