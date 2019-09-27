@@ -10,7 +10,7 @@ s = rng;
 %% Simulation general options:
 SimulationOptions.seed = s;    % save
 SimulationOptions.dt = 1e-3;   % (sec)
-SimulationOptions.T  = 1e1;    % (sec) duration of simulation
+SimulationOptions.T  = 1e2;    % (sec) duration of simulation
 SimulationOptions.TimeVector = (SimulationOptions.dt:SimulationOptions.dt:SimulationOptions.T)';
 SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);  
 
@@ -23,8 +23,8 @@ SimulationOptions.numOfElectrodes = length(SimulationOptions.electrodes);
 Connectivity.WhichMatrix       = 'nanoWires';    % 'nanoWires' \ 'randAdjMat'
 switch Connectivity.WhichMatrix
     case 'nanoWires'
-        Connectivity.filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat';
-        %Connectivity.filename = '2016-09-08-155044_asn_nw_00700_nj_14533_seed_042_avl_100.00_disp_10.00.mat';
+        %Connectivity.filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat';
+        Connectivity.filename = '2016-09-08-155044_asn_nw_00700_nj_14533_seed_042_avl_100.00_disp_10.00.mat';
     case 'randAdjMat'
         Connectivity.NumberOfNodes = 30;
         Connectivity.AverageDegree = 10;
@@ -77,7 +77,7 @@ Signals{4,1} = getStimulus(Stimulus4, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-[Output, SimulationOptions, snapshots] = simulateNetwork(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
+[Output, SimulationOptions, snapshots] = simulateNetworkLite(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
 fprintf('\n')
 % run DataExport.m
 toc 

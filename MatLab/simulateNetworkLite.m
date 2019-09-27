@@ -1,4 +1,4 @@
-function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connectivity, Components, Signals, SimulationOptions, varargin)
+function [OutputDynamics, SimulationOptions, snapshots] = simulateNetworkLite(Connectivity, Components, Signals, SimulationOptions, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulate network at each time step. Mostly the same as Ido's code.
 % Improved the simulation efficiency by change using nodal analysis.
@@ -39,10 +39,9 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
 %{
     Connectivity = getConnectivity(Connectivity);
     contact      = [1,2];
-    Equations    = getEquations(Connectivity,contact);
     Components   = initializeComponents(Connectivity.NumberOfEdges,Components)
     Stimulus     = getStimulus(Stimulus);
-    
+
     OutputDynamics = runSimulation(Equations, Components, Stimulus);
 %}
 %
@@ -62,11 +61,11 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     edgeList        = Connectivity.EdgeList.';
     RHS             = zeros(V+numOfElectrodes,1); % the first E entries in the RHS vector.
     
-    wireVoltage        = zeros(niterations, V);
+%     wireVoltage        = zeros(niterations, V);
     electrodeCurrent   = zeros(niterations, numOfElectrodes);
-    junctionVoltage    = zeros(niterations, E);
-    junctionResistance = zeros(niterations, E);
-    junctionFilament   = zeros(niterations, E);
+    %junctionVoltage    = zeros(niterations, E);
+    %junctionResistance = zeros(niterations, E);
+%     junctionFilament   = zeros(niterations, E);
     %% If snapshots are requested, allocate memory for them:
     if ~isempty(varargin)
         snapshots           = cell(size(varargin{1}));
@@ -123,11 +122,11 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
         updateComponentState(compPtr, SimulationOptions.dt);    % ZK: changed to allow retrieval of local values
         %[lambda_vals(ii,:), voltage_vals(ii,:)] = updateComponentState(compPtr, Stimulus.dt);
         
-        wireVoltage(ii,:)        = sol(1:V);
+        %wireVoltage(ii,:)        = sol(1:V);
         electrodeCurrent(ii,:)   = sol(V+1:end);
-        junctionVoltage(ii,:)    = compPtr.comp.voltage;
-        junctionResistance(ii,:) = compPtr.comp.resistance;
-        junctionFilament(ii,:)   = compPtr.comp.filamentState;
+        %junctionVoltage(ii,:)    = compPtr.comp.voltage;
+        %junctionResistance(ii,:) = compPtr.comp.resistance;
+        %junctionFilament(ii,:)   = compPtr.comp.filamentState;
         
         
         % Record the activity of the whole network
@@ -146,9 +145,8 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     SimulationOptions.SnapshotsIdx = snapshots_idx; % Save these to access the right time from .TimeVector.
     OutputDynamics.sources = [];
     OutputDynamics.drains  = [];
-    for i = 1:length(SimulationOptions.electrodes)
-        sourceChecker = sum(Signals{i,1})>0;
-        if sourceChecker
+    for i = 1:length(SimulationOptions.electrodes) 
+        if sum(Signals{i,1})>0
             OutputDynamics.sources = [OutputDynamics.sources, SimulationOptions.electrodes(i)];
         else
             OutputDynamics.drains  = [OutputDynamics.drains, SimulationOptions.electrodes(i)];
@@ -156,10 +154,10 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     end
     % Calculate network resistance and save:
     OutputDynamics.electrodeCurrent   = electrodeCurrent;
-    OutputDynamics.wireVoltage        = wireVoltage;
-    OutputDynamics.junctionVoltage    = junctionVoltage;
-    OutputDynamics.junctionResistance = junctionResistance;
-    OutputDynamics.junctionFilament   = junctionFilament;
+    %OutputDynamics.wireVoltage        = wireVoltage;
+    %OutputDynamics.junctionVoltage    = junctionVoltage;
+    %OutputDynamics.junctionResistance = junctionResistance;
+    %OutputDynamics.junctionFilament   = junctionFilament;
     
     
 

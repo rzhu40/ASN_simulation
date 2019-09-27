@@ -25,6 +25,7 @@ import time
 import pickle
 
 from scipy.stats import gennorm
+from matplotlib.lines import Line2D
 
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -499,8 +500,6 @@ def generate_graph(wires_dict):
     wires_dict['G'] = G
 
     return wires_dict
-
-
 
 def check_connectedness(wires_dict):
     """

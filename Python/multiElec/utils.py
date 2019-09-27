@@ -7,24 +7,41 @@ from tqdm import tqdm
 from copy import deepcopy
 
 class simulation_options__:
-    def __init__(self, dt=1e-3, T=1e1, 
-                interfaceElectrodes=[73,30]):
+    def __init__(self, dt=1e-3, T=1e1,
+                contactMode = 'farthest',
+                interfaceElectrodes = None):
         self.dt = dt
         self.T = T
         self.TimeVector = np.arange(0, T, dt)
         self.NumOfIterations = self.TimeVector.size
-        self.interfaceElectrodes = interfaceElectrodes
-        self.electrodes = [i-1 for i in interfaceElectrodes]
+        self.contactMode = contactMode
+        if contactMode == 'preSet':
+            self.interfaceElectrodes = interfaceElectrodes
+            self.electrodes = [i-1 for i in interfaceElectrodes]
 
 class connectivity__:
-    def __init__(self, filename):
-        fullpath = 'connectivity/connectivity_data/' + filename
-        matfile = sio.loadmat(fullpath, squeeze_me=True, struct_as_record=False)
-        for key in matfile.keys():
-            if key[0:2] != '__':
-                setattr(self, key, matfile[key])
-        self.numOfJunctions = self.number_of_junctions
-        self.numOfWires = self.number_of_wires
+    def __init__(self, filename=None, wires_dict=None, graph=None):
+        if not filename == None:
+            fullpath = 'connectivity/connectivity_data/' + filename
+            matfile = sio.loadmat(fullpath, squeeze_me=True, struct_as_record=False)
+            for key in matfile.keys():
+                if key[0:2] != '__':
+                    setattr(self, key, matfile[key])
+            self.numOfJunctions = self.number_of_junctions
+            self.numOfWires = self.number_of_wires
+        elif not wires_dict == None:
+            matfile = wires_dict
+            for key in matfile.keys():
+                if key[0:2] != '__':
+                    setattr(self, key, matfile[key])
+            self.numOfJunctions = self.number_of_junctions
+            self.numOfWires = self.number_of_wires
+        elif not graph == None:
+            self.adj_matrix = nx.adjacency_matrix(graph).todense()
+            self.numOfWires = np.size(self.adj_matrix[:,0])
+            self.numOfJunctions = int(np.sum(self.adj_matrix)/2)
+            self.edge_list = np.array(np.where(np.triu(self.adj_matrix) == 1)).T
+
 
 class junctionState__:
     def __init__(self, NumOfJunctions, setVoltage=1e-2, resetVoltage=1e-3,
@@ -61,22 +78,51 @@ class junctionState__:
                                             self.maxFlux
 
 class stimulus__:
-    def __init__(self, biasType='DC', nanowire = 0,
+    def __init__(self, biasType='DC',
                 TimeVector=np.arange(0, 1e1, 1e-3), 
                 onTime=1, offTime=2,
                 onAmp=1.1, offAmp=0.005):
-        self.nanowire = nanowire
         if biasType == 'Drain':
             self.signal = np.zeros(TimeVector.size)
-
         elif biasType == 'DC':
             onIndex = np.where((TimeVector >= onTime) & (TimeVector <= offTime))
             self.signal = np.zeros(TimeVector.size)
             self.signal = np.ones(TimeVector.size) * offAmp
             self.signal[onIndex] = onAmp
-        
+
+def get_farthest_pairing(adjMat):
+    distMat = np.zeros(adjMat.shape)
+    G = nx.from_numpy_array(adjMat)
+    for i in range(adjMat[:,0].size):
+        for j in range(i+1, adjMat[:,0].size):
+            distMat[i,j] = nx.shortest_path_length(G, i, j)
+    distMat = distMat + distMat.T
+    farthest = np.array(np.where(distMat == np.max(distMat)))[:,1]
+    return farthest
+
+def get_boundary_pairing(connectivity, numOfPairs=5):
+    centerX = connectivity.xc
+    electrodes = np.zeros(2*numOfPairs)
+    electrodes[0:numOfPairs] = np.argsort(centerX)[0:numOfPairs]
+    electrodes[numOfPairs:] = np.argsort(centerX)[-numOfPairs:]
+    return electrodes.astype(int)
+
 def simulateNetworkPlus(simulationOptions, 
                         connectivity, junctionState):
+
+    if simulationOptions.contactMode == 'farthest':
+        simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
+        simulationOptions.interfaceElectrodes = [i+1 for i in simulationOptions.electrodes]
+    elif simulationOptions.contactMode == 'Alon':
+        simulationOptions.electrodes = get_boundary_pairing(connectivity)
+        simulationOptions.interfaceElectrodes = [i+1 for i in simulationOptions.electrodes]
+
+    stimulusChecker = len(simulationOptions.electrodes) - len(simulationOptions.stimulus)
+    if stimulusChecker > 0:
+        for i in range(stimulusChecker):
+            tempStimulus = stimulus__(biasType = 'Drain', 
+            TimeVector = simulationOptions.TimeVector)
+            simulationOptions.stimulus.append(tempStimulus)
 
     niterations = simulationOptions.NumOfIterations
     electrodes = simulationOptions.electrodes

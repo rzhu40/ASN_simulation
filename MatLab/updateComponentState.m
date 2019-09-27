@@ -1,4 +1,4 @@
-function updateComponentStateMulti(compPtr, dt)
+function updateComponentState(compPtr, dt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The function updates the state field of the input struct (which is passed
 % by reference). (for example, the 'charge' fields for memristors or the

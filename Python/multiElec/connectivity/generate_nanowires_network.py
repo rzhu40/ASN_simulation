@@ -33,7 +33,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--nwires',
     type    = int,
-    default = 2000,
+    default = 100,
     help    = 'The number of nanowires in the network.')
 
 parser.add_argument('--mean_length', 
@@ -105,7 +105,7 @@ if not wires.check_connectedness(wires_dict):
     wires_dict = wires.select_largest_component(wires_dict)
 
     logging.info("The graph is connected. Will save it to mat file.")
-    wires.export_to_matlab(wires_dict)
+    #wires.export_to_matlab(wires_dict)
 
 if args.plot_network:
  

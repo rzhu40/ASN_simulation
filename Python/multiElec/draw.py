@@ -42,12 +42,14 @@ def draw_wires(fig, toDraw, TimeStamp=0, PathInd=[]):
         if this_wire.isElectrode != 0:
             if this_wire.isElectrode == 1:
                 electrodeColor = 'green'
+                type = 'source'
             else:
                 electrodeColor = 'red'
+                type = 'drain'
             temp = go.Scatter(x = [this_wire.contactEnd[0]],
                             y = [this_wire.contactEnd[1]],
                             mode='markers',
-                            name='Drain',
+                            name=type,
                             opacity=0.9,
                             marker=dict(symbol = 'hexagon',
                                         color=electrodeColor,
