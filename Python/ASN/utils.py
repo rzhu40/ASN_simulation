@@ -91,7 +91,7 @@ class stimulus__:
                 TimeVector=np.arange(0, 1e1, 1e-3), 
                 onTime=1, offTime=2,
                 onAmp=1.1, offAmp=0.005,
-                f = 1):
+                f = 1, customSignal = None):
         if biasType == 'Drain':
             self.signal = np.zeros(TimeVector.size)
         elif biasType == 'DC':
@@ -102,13 +102,22 @@ class stimulus__:
             offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
             self.signal = onAmp*np.sin(2*np.pi*f*TimeVector)
             self.signal[offIndex] = offAmp
+        elif biasType == 'Square':
+            period = 1/f
+            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
+            self.signal = onAmp * (-np.sign(x % period - period/2))
+            self.signal[offIndex] = offAmp
+        elif biasType == 'Triangular':
+            period = 1/f
+            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
+            self.signal = 4*onAmp/period * abs((TimeVector-period/4) % period - period/2) - onAmp
+            self.signal[offIndex] = offAmp
         elif biasType == 'Pulse':
-            self.signal = np.ones(TimeVector.size)*offAmp
-            checker = np.round(TimeVector % (1/f), 3)
-            onIndex = np.where(checker <0.5/f)
-            self.signal[onIndex] = onAmp
+            self.signal= onAmp * ((TimeVector % period) < period/2)
             offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
             self.signal[offIndex] = offAmp
+        elif biasType == 'Custom': 
+            self.signal = np.array(customSignal)
         else:
             # self.signal = np.ones(TimeVector.size) * offAmp
             print('Stimulus type error.')
