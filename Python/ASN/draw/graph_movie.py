@@ -2,10 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from utils import is_notebook
-if is_notebook():
-    from draw.draw_graph import draw_graph
-else:
-    from draw_graph import draw_graph
+from draw.draw_graph import draw_graph
+# if is_notebook():
+#     from draw.draw_graph import draw_graph
+# else:
+#     from draw_graph import draw_graph
 
 import matplotlib
 matplotlib.rcParams['animation.embed_limit'] = 1e8
@@ -60,8 +61,8 @@ class graph_movie:
             plt.close()
 
 if __name__ == '__main__':
-    import os 
-    os.chdir(r'C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN')
+    # import os 
+    # os.chdir(r'C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN')
     from utils import *
 
     sim1 = defaultSimulation(connectivity__(filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat'),
