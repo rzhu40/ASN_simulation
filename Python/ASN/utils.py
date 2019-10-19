@@ -92,6 +92,8 @@ class stimulus__:
                 onTime=1, offTime=2,
                 onAmp=1.1, offAmp=0.005,
                 f = 1, customSignal = None):
+        period = 1/f
+        offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
         if biasType == 'Drain':
             self.signal = np.zeros(TimeVector.size)
         elif biasType == 'DC':
@@ -99,30 +101,30 @@ class stimulus__:
             self.signal = np.ones(TimeVector.size) * offAmp
             self.signal[onIndex] = onAmp
         elif biasType == 'AC':
-            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
             self.signal = onAmp*np.sin(2*np.pi*f*TimeVector)
-            self.signal[offIndex] = offAmp
         elif biasType == 'Square':
-            period = 1/f
-            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
-            self.signal = onAmp * (-np.sign(x % period - period/2))
-            self.signal[offIndex] = offAmp
+            self.signal = onAmp * (-np.sign(TimeVector % period - period/2))
         elif biasType == 'Triangular':
-            period = 1/f
-            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
             self.signal = 4*onAmp/period * abs((TimeVector-period/4) % period - period/2) - onAmp
-            self.signal[offIndex] = offAmp
         elif biasType == 'Pulse':
-            self.signal= onAmp * ((TimeVector % period) < period/2)
+            self.signal= (onAmp-offAmp)*((TimeVector % period) < period/2) + np.ones(TimeVector.size)*offAmp
             offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
-            self.signal[offIndex] = offAmp
         elif biasType == 'Custom': 
-            self.signal = np.array(customSignal)
+            if len(customSignal) == TimeVector.size:
+                self.signal = np.array(customSignal)
+            else:
+                print(f'Signal length is not equal to simulation length. Current TimeVector length is {TimeVector.size}!')
+                from sys import exit
+                exit()
         else:
             # self.signal = np.ones(TimeVector.size) * offAmp
-            print('Stimulus type error.')
+            print('Stimulus type error. Options are: ')
+            print('Drain | DC | AC | Square | Triangular | Pulse | Custom')
             from sys import exit
             exit()
+        
+        if biasType != 'Custom':
+            self.signal[offIndex] = offAmp
             
 
 def get_farthest_pairing(adjMat):
@@ -250,7 +252,7 @@ def defaultSimulation(Connectivity,
                     biasType = 'DC',
                     onTime=0, offTime=5,
                     onAmp=1.1, offAmp=0.005,
-                    f = 1):
+                    f = 1, cutsomSignal = None):
 
     SimulationOptions = simulation_options__(dt = dt, T = T,
                                             contactMode = contactMode,
@@ -261,7 +263,7 @@ def defaultSimulation(Connectivity,
                             TimeVector = SimulationOptions.TimeVector, 
                             onTime = onTime, offTime = offTime,
                             onAmp = onAmp, offAmp = offAmp,
-                            f= f)
+                            f= f, customSignal= cutsomSignal)
     SimulationOptions.stimulus.append(tempStimulus)
 
     JunctionState = junctionState__(Connectivity.numOfJunctions)
