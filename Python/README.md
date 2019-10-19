@@ -1,3 +1,4 @@
+# This Guide is old. Please contact me if there is any trouble starting the simulation.
 # The Python User Guide
   * The python equivalent of Ido's MatLab code is here:
   https://github.com/rzhu40/ASN_simulation/tree/master/Python/Ido's%20method.
