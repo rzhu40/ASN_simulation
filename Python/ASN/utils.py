@@ -21,7 +21,7 @@ class simulation_options__:
 
 class connectivity__:
     def __init__(self, filename=None, wires_dict=None, graph=None):
-        if not filename == None:
+        if filename != None:
             fullpath = 'connectivity_data/' + filename
             matfile = sio.loadmat(fullpath, squeeze_me=True, struct_as_record=False)
             for key in matfile.keys():
@@ -29,14 +29,16 @@ class connectivity__:
                     setattr(self, key, matfile[key])
             self.numOfJunctions = self.number_of_junctions
             self.numOfWires = self.number_of_wires
-        elif not wires_dict == None:
+
+        elif wires_dict != None:
             matfile = wires_dict
             for key in matfile.keys():
                 if key[0:2] != '__':
                     setattr(self, key, matfile[key])
             self.numOfJunctions = self.number_of_junctions
             self.numOfWires = self.number_of_wires
-        elif not graph == None:
+
+        elif graph != None:
             self.adj_matrix = nx.adjacency_matrix(graph).todense()
             self.numOfWires = np.size(self.adj_matrix[:,0])
             self.numOfJunctions = int(np.sum(self.adj_matrix)/2)
@@ -44,16 +46,18 @@ class connectivity__:
 
 
 class junctionState__:
-    def __init__(self, NumOfJunctions, setVoltage=1e-2, resetVoltage=1e-3,
+    def __init__(self, numOfJunctions, 
+                setVoltage=1e-2, resetVoltage=1e-3,
+                onResistance = 1e4, offResistance = 1e7,
                 criticalFlux=1e-1, maxFlux=1.5e-1):
         self.type = 'Atomic_Switch'
-        self.voltage = np.zeros(NumOfJunctions)
-        self.resistance = np.zeros(NumOfJunctions)
-        self.onResistance = np.ones(NumOfJunctions)*1e4
-        self.offResistance = np.ones(NumOfJunctions)*1e7
+        self.voltage = np.zeros(numOfJunctions)
+        self.resistance = np.zeros(numOfJunctions)
+        self.onResistance = np.ones(numOfJunctions)*onResistance
+        self.offResistance = np.ones(numOfJunctions)*offResistance
 
-        self.filamentState = np.zeros(NumOfJunctions)
-        self.OnOrOff = np.full(NumOfJunctions, False, dtype=bool)
+        self.filamentState = np.zeros(numOfJunctions)
+        self.OnOrOff = np.full(numOfJunctions, False, dtype=bool)
         self.setVoltage = setVoltage
         self.resetVoltage = resetVoltage
         self.critialFlux = criticalFlux
@@ -62,7 +66,7 @@ class junctionState__:
     def updateResistance(self):
         self.OnOrOff = abs(self.filamentState) >= self.critialFlux
         self.resistance = self.offResistance + \
-                            (self.onResistance-self.offResistance)*self.OnOrOff
+                        (self.onResistance-self.offResistance)*self.OnOrOff
 
     def updateJunctionState(self, dt):
         last_sign = np.sign(self.filamentState)
