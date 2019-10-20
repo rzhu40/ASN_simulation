@@ -55,17 +55,28 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
                 graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_filament[i]), width = 2, style='solid')
             else:
                 graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_filament[i]), width = 1, style='dashed')
+
+    elif edge_mode == 'Lyapunov':
+        graphView = nx.empty_graph(network.numOfWires)
+        if not hasattr(network, 'Lyapunov'):
+            print('Lyapunov not calculated')
+            network.Lyapunov = np.zeros(network.numOfJunctions)
+        for i in range(network.numOfJunctions):
+            if this_switch[i]:
+                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = network.Lyapunov[i], width = 2, style='solid')
+            else:
+                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = network.Lyapunov[i], width = 1, style='dashed')
+
     
     from analysis.GraphTheory import onGraph
     tempGraph = onGraph(network, this_TimeStamp=this_TimeStamp)
     tempPaths = [i for i in nx.all_simple_paths(tempGraph, sources[0], drains[0])]
     pathFormed = len(tempPaths) > 0
 
-
-    diEdgeList = np.array(list(graphView.edges))
+    # diEdgeList = np.array(list(graphView.edges))
     # edge_colors = [graphView[diEdgeList[i,0]][diEdgeList[i,1]]['weight'] for i in range(len(graphView.edges))]
-    
     # widths = this_switch+1
+
     edge_colors = [graphView[u][v]['weight'] for u,v in graphView.edges]
     widths = [graphView[u][v]['width'] for u,v in graphView.edges]
     styles = [graphView[u][v]['style'] for u,v in graphView.edges]
@@ -86,6 +97,8 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         cmap = plt.cm.Reds
     else:
         cmap = plt.cm.Blues
+    
+    cmap_min = 0
     if len(edge_colors)==0:
         cmap_max = 1
     elif edge_mode == 'current':
@@ -94,13 +107,16 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         cmap_max = np.max(abs(network.junctionVoltage))
     elif edge_mode == 'filament':
         cmap_max = np.max(network.filamentState)
+    elif edge_mode == 'Lyapunov':
+        cmap_min = np.min(network.Lyapunov)
+        cmap_max = np.max(network.Lyapunov)
 
     nx.draw_networkx(graphView, pos,
                     node_size=350,
                     node_color=node_colors,
                     edge_color=edge_colors,
                     edge_cmap=cmap,
-                    edge_vmin=0,
+                    edge_vmin=cmap_min,
                     edge_vmax=cmap_max,
                     font_color='w',
                     width=widths,
@@ -117,7 +133,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     
     if colorbar:
         fig.set_size_inches((figsize[0]*1.2, figsize[1]))
-        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=cmap_max))
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=cmap_min, vmax=cmap_max))
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=ax,
                             fraction = 0.05, label=edge_mode)

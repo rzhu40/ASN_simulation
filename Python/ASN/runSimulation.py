@@ -6,7 +6,7 @@ from utils import *
 SimulationOptions = simulation_options__(dt = 1e-3, T = 100,
                                         contactMode = 'preSet',
                                         electrodes = [72,29])
-
+                                        
 Connectivity = connectivity__(
                         filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat')
 

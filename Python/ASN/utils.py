@@ -238,7 +238,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState):
     Network.shortestPaths = [p for p in nx.all_shortest_paths(Network.graph, 
                                                         source=Network.sources[0], 
                                                         target=Network.drains[0])]
-    Network.contactWires = simulationOptions.electrodes
+    Network.electrodes = simulationOptions.electrodes
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
     # Network.junctionList = np.add(connectivity.edge_list, 1).T
