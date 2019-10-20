@@ -46,11 +46,11 @@ class connectivity__:
 
 
 class junctionState__:
-    def __init__(self, numOfJunctions, 
+    def __init__(self, numOfJunctions, mode = 'binary',
                 setVoltage=1e-2, resetVoltage=1e-3,
                 onResistance = 1e4, offResistance = 1e7,
                 criticalFlux=1e-1, maxFlux=1.5e-1):
-        self.type = 'Atomic_Switch'
+        self.mode = mode
         self.voltage = np.zeros(numOfJunctions)
         self.resistance = np.zeros(numOfJunctions)
         self.onResistance = np.ones(numOfJunctions)*onResistance
@@ -65,8 +65,19 @@ class junctionState__:
 
     def updateResistance(self):
         self.OnOrOff = abs(self.filamentState) >= self.critialFlux
-        self.resistance = self.offResistance + \
-                        (self.onResistance-self.offResistance)*self.OnOrOff
+        if self.mode == 'binary':
+            self.resistance = self.offResistance + \
+                            (self.onResistance-self.offResistance)*self.OnOrOff
+                            
+        elif self.mode == 'tunneling':
+            phi = 0.81
+            C0 = 10.19
+            J1 = 0.0000471307
+            A = 0.17
+            d = (0.1 - abs(self.filamentState))*50
+            d[np.where(d<0)[0]] = 0
+            tun = 2/A * d**2 / phi**0.5 * np.exp(C0*phi**2 * d)/J1
+            self.resistance = 1/(1/(tun + self.onResistance[0]) + 1/self.offResistance[0])
 
     def updateJunctionState(self, dt):
         last_sign = np.sign(self.filamentState)
@@ -245,7 +256,7 @@ def inputPacker(Connectivity,
     packer = [Connectivity, contactMode, electrodes, dt, T, biasType, onTime, offTime, onAmp, offAmp, f]
     return packer
 
-def defaultSimulation(Connectivity, 
+def defaultSimulation(Connectivity, junctionMode = 'binary', 
                     contactMode='farthest', electrodes=None,
                     dt= 1e-3, T=10, 
                     biasType = 'DC',
@@ -265,7 +276,7 @@ def defaultSimulation(Connectivity,
                             f= f, customSignal= cutsomSignal)
     SimulationOptions.stimulus.append(tempStimulus)
 
-    JunctionState = junctionState__(Connectivity.numOfJunctions)
+    JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode)
 
     this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState)
 
