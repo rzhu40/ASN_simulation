@@ -4,11 +4,11 @@ clear;
 
 tic
 %% Set the seed for PRNGs for reproducibility:
-rng(42)
-s = rng;
+##rng(42)
+##s = rng;
 
 %% Simulation general options:
-SimulationOptions.seed = s;    % save
+##SimulationOptions.seed = s;    % save
 SimulationOptions.dt = 1e-3;   % (sec)
 SimulationOptions.T  = 1e2;    % (sec) duration of simulation
 SimulationOptions.TimeVector = (SimulationOptions.dt:SimulationOptions.dt:SimulationOptions.T)';
@@ -77,7 +77,8 @@ Signals{4,1} = getStimulus(Stimulus4, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-[Output, SimulationOptions, snapshots] = simulateNetworkLite(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
+##[Output, SimulationOptions, snapshots] = simulateNetworkLite(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
+[Output, SimulationOptions, snapshots] = kevin(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
 fprintf('\n')
 % run DataExport.m
 toc 

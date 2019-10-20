@@ -1,4 +1,4 @@
-function resistance = updateComponentResistanceMulti(compPtr)
+function resistance = updateComponentResistance(compPtr)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The function updates the 'resistance' field of the input struct (which is 
 % passed by reference).

@@ -1,4 +1,4 @@
-function Components = initializeComponentsMulti(E,Components)
+function Components = initializeComponents(E,Components)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Implements multi-electrodes simulation.
 % Updated with nodal analysis now.
