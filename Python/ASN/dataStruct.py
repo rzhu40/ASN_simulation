@@ -8,6 +8,17 @@ from draw.draw_plotly import draw_plotly
 class network__:
     pass
 
+    def findJunction(self, wire1, wire2):
+        edgeList = self.connectivity.edge_list
+        index = np.where((edgeList[:,0] == wire1) & (edgeList[:,1] == wire2))[0]
+        if len(index) == 0:
+            index = np.where((edgeList[:,0] == wire2) & (edgeList[:,1] == wire1))[0]
+        if len(index) == 0:
+            print(f'Unfortunately, no junction between nanowire {wire1} and {wire2}')
+            return None
+        else:
+            return index[0]
+
     def allocateData(self):
         print('Allocating data to obejcts....')
         self.gridSize = [self.connectivity.length_x, self.connectivity.length_y]

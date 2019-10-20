@@ -126,7 +126,6 @@ class stimulus__:
         if biasType != 'Custom':
             self.signal[offIndex] = offAmp
             
-
 def get_farthest_pairing(adjMat):
     distMat = np.zeros(adjMat.shape)
     G = nx.from_numpy_array(adjMat)
