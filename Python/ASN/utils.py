@@ -303,6 +303,7 @@ def is_notebook():
         return False      # Probably standard Python interpreter
 
 def check_memory():
+    import os
     import psutil
     process = psutil.Process(os.getpid())
     print(f'Current Memory usage is {process.memory_info().rss/1e6} MB.')
