@@ -121,10 +121,10 @@ class stimulus__:
             self.signal= (onAmp-offAmp)*((TimeVector % period) < period/2) + np.ones(TimeVector.size)*offAmp
             offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
         elif biasType == 'Custom': 
-            if len(customSignal) == TimeVector.size:
-                self.signal = np.array(customSignal)
+            if len(customSignal) >= TimeVector.size:
+                self.signal = np.array(customSignal[0:TimeVector.size])
             else:
-                print(f'Signal length is not equal to simulation length. Current TimeVector length is {TimeVector.size}!')
+                print(f'Signal length is shorter to simulation length. Current TimeVector length is {TimeVector.size}!')
                 from sys import exit
                 exit()
         else:
