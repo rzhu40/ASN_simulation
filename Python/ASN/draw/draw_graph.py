@@ -70,9 +70,11 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     
     from analysis.GraphTheory import onGraph
     tempGraph = onGraph(network, this_TimeStamp=this_TimeStamp)
-    tempPaths = [i for i in nx.all_simple_paths(tempGraph, sources[0], drains[0])]
-    pathFormed = len(tempPaths) > 0
-
+    pathFormed = nx.has_path(tempGraph, sources[0], drains[0])
+    
+    # tempPaths = [i for i in nx.all_simple_paths(tempGraph, sources[0], drains[0])]
+    # pathFormed = len(tempPaths) > 0
+    
     # diEdgeList = np.array(list(graphView.edges))
     # edge_colors = [graphView[diEdgeList[i,0]][diEdgeList[i,1]]['weight'] for i in range(len(graphView.edges))]
     # widths = this_switch+1

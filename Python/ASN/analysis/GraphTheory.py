@@ -44,15 +44,17 @@ def findCurrent(network, numToFind = 1):
                 onGraph.add_edge(edgeList[i,0], edgeList[i,1])
             elif this_direction[i] == -1:
                 onGraph.add_edge(edgeList[i,1], edgeList[i,0])
-                
-        tempPaths = [i for i in nx.all_simple_paths(onGraph, source, drain)]
-        pathFormed = len(tempPaths) > 0
-        if pathFormed & (len(tempPaths) > numFound):
-            for i in tempPaths:
-                if i not in PathList:
-                    PathList.append(i)
-                    foundTime.append(np.round(network.TimeVector[this_time], 3))
-                    numFound+=1
+        
+        pathFormed = nx.has_path(onGraph, source, drain)
+        if pathFormed:
+            tempPaths = [i for i in nx.all_simple_paths(onGraph, source, drain)]
+            if len(tempPaths) > numFound:
+                for i in tempPaths:
+                    if i not in PathList:
+                        PathList.append(i)
+                        foundTime.append(np.round(network.TimeVector[this_time], 3))
+                        numFound+=1
+        
         if numFound >= numToFind:
             break
     

@@ -40,7 +40,11 @@ class network__:
     def isOnCurrentPath(self):
         self.onCurrentPath = np.zeros((self.TimeVector.size, self.numOfJunctions), dtype = bool)
         edgeList = self.connectivity.edge_list
-        onGraph = nx.empty_graph(self.numOfWires)
+        onMat = np.zeros((self.numOfWires, self.numOfWires))
+        onMat[edgeList[:,0], edgeList[:,1]] = self.junctionSwitch[0,:]
+        onMat[edgeList[:,1], edgeList[:,0]] = self.junctionSwitch[0,:]
+        onGraph = nx.from_numpy_array(onMat)
+        # onGraph = nx.empty_graph(self.numOfWires)
 
         for this_time in range(1, self.TimeVector.size):
             flag = self.junctionSwitch[this_time,:] == self.junctionSwitch[this_time-1,:]

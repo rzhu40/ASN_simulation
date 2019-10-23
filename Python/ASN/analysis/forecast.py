@@ -145,7 +145,6 @@ def forecast(simulationOptions, connectivity, junctionState, training_ratio = 0.
     Network.criticalFlux = junctionState.critialFlux
     # Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
     Network.stimulus = simulationOptions.stimulus
-    # Network.junctionList = np.add(connectivity.edge_list, 1).T
     Network.connectivity = connectivity
     Network.TimeVector = simulationOptions.TimeVector
     return Network
