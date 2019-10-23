@@ -154,7 +154,7 @@ def get_boundary_pairing(connectivity, numOfPairs=5):
     electrodes[numOfPairs:] = np.argsort(centerX)[-numOfPairs:]
     return electrodes.astype(int)
 
-def simulateNetwork(simulationOptions, connectivity, junctionState):
+def simulateNetwork(simulationOptions, connectivity, junctionState, disable_tqdm = False):
 
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
@@ -196,7 +196,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState):
     if len(Network.drains) == 0:
         Network.drains.append(electrodes[1])
 
-    for this_time in tqdm(range(niterations), desc='Running Simulation '):
+    for this_time in tqdm(range(niterations), desc='Running Simulation ', disable = disable_tqdm):
         junctionState.updateResistance()
         junctionConductance = 1/junctionState.resistance
         
@@ -262,7 +262,9 @@ def defaultSimulation(Connectivity, junctionMode = 'binary',
                     biasType = 'DC',
                     onTime=0, offTime=5,
                     onAmp=1.1, offAmp=0.005,
-                    f = 1, cutsomSignal = None):
+                    f = 1, cutsomSignal = None,
+                    findFirst = True,
+                    disable_tqdm = False):
 
     SimulationOptions = simulation_options__(dt = dt, T = T,
                                             contactMode = contactMode,
@@ -278,15 +280,16 @@ def defaultSimulation(Connectivity, junctionMode = 'binary',
 
     JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode)
 
-    this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState)
+    this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, disable_tqdm)
+    
+    if findFirst:
+        from analysis.GraphTheory import findCurrent
 
-    from analysis.GraphTheory import findCurrent
-
-    try:
-        activation = findCurrent(this_realization, 1)
-        print(f'First current path {activation[0][0]} formed at time = {activation[1][0]} s.')
-    except:
-        print('Unfortunately, no current path is formed in simulation time.')
+        try:
+            activation = findCurrent(this_realization, 1)
+            print(f'First current path {activation[0][0]} formed at time = {activation[1][0]} s.')
+        except:
+            print('Unfortunately, no current path is formed in simulation time.')
 
     return this_realization
 
