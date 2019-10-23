@@ -117,6 +117,8 @@ class stimulus__:
             self.signal = onAmp * (-np.sign(TimeVector % period - period/2))
         elif biasType == 'Triangular':
             self.signal = 4*onAmp/period * abs((TimeVector-period/4) % period - period/2) - onAmp
+        elif biasType == 'Sawtooth':
+            self.signal = onAmp/period * (TimeVector % period)
         elif biasType == 'Pulse':
             self.signal= (onAmp-offAmp)*((TimeVector % period) < period/2) + np.ones(TimeVector.size)*offAmp
             offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
@@ -130,7 +132,7 @@ class stimulus__:
         else:
             # self.signal = np.ones(TimeVector.size) * offAmp
             print('Stimulus type error. Options are: ')
-            print('Drain | DC | AC | Square | Triangular | Pulse | Custom')
+            print('Drain | DC | AC | Square | Triangular | Sawtooth | Pulse | Custom')
             from sys import exit
             exit()
         
