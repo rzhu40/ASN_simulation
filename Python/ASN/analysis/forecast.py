@@ -1,7 +1,7 @@
 import numpy as np
 from utils import *
 
-def expand_signal(simulationOptions, scale = 10, resting = True, resting_ratio = 0.5):
+def expander(simulationOptions, scale = 10, resting = True, resting_ratio = 0.5):
     expand_length = int(scale*(1-resting_ratio))
 
     simulationOptions.T *=  scale
@@ -53,13 +53,16 @@ def getWeight(wireVoltage, stimulus, non_elec):
     weight = lsq_linear(lhs, rhs, (-10,10))['x']
     return weight
 
-def forecast(simulationOptions, connectivity, junctionState, training_ratio = 0.5, pre_activate = False):
+def forecast(simulationOptions, connectivity, junctionState, 
+            training_ratio = 0.5, pre_activate = False, 
+            expand_signal = True, expand_scale = 10):
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
     elif simulationOptions.contactMode == 'Alon':
         simulationOptions.electrodes = get_boundary_pairing(connectivity, 28)
     
-    simulationOptions = expand_signal(simulationOptions)
+    if expand_signal:
+        simulationOptions = expander(simulationOptions, expand_scale)
 
     niterations = simulationOptions.NumOfIterations
     training_length = int(niterations * training_ratio)
