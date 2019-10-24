@@ -136,7 +136,7 @@ class stimulus__:
             from sys import exit
             exit()
         
-        if biasType != 'Custom':
+        if (biasType != 'Custom') and (biasType != 'Drain'):
             self.signal[offIndex] = offAmp
             
 def get_farthest_pairing(adjMat):
