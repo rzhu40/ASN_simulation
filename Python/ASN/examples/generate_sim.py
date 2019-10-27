@@ -16,7 +16,7 @@ wires_dict = wires.generate_wires_distribution(number_of_wires = 100,
                                             gennorm_shape = 3,
                                             centroid_dispersion = 150,
                                             Lx = 3e2,
-                                            Ly = 3e2);
+                                            Ly = 3e2)
 
 # Get junctions list and their positions
 

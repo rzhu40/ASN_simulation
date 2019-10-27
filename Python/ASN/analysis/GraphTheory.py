@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 from itertools import islice
 
+# def generateGrid()
 def onGraph(network, this_TimeStamp = 0):
     edgeList = network.connectivity.edge_list
     source = network.sources[0]

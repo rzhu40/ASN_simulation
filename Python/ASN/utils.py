@@ -46,11 +46,13 @@ class connectivity__:
 
 
 class junctionState__:
-    def __init__(self, numOfJunctions, mode = 'binary',
+    def __init__(self, numOfJunctions, 
+                mode = 'binary', collapse = False,
                 setVoltage=1e-2, resetVoltage=1e-3,
                 onResistance = 1e4, offResistance = 1e7,
                 criticalFlux=1e-1, maxFlux=1.5e-1):
         self.mode = mode
+        self.collapse = collapse
         self.voltage = np.zeros(numOfJunctions)
         self.resistance = np.zeros(numOfJunctions)
         self.onResistance = np.ones(numOfJunctions)*onResistance
@@ -81,6 +83,8 @@ class junctionState__:
 
     def updateJunctionState(self, dt):
         last_sign = np.sign(self.filamentState)
+        wasOpen = self.filamentState >= self.critialFlux
+
         self.filamentState = self.filamentState + \
                             (abs(self.voltage) > self.setVoltage) *\
                             (abs(self.voltage) - self.setVoltage) *\
@@ -96,6 +100,9 @@ class junctionState__:
         maxPosition = np.where(abs(self.filamentState) > self.maxFlux)[0]
         self.filamentState[maxPosition] = np.sign(self.filamentState[maxPosition]) * \
                                             self.maxFlux
+        if self.collapse:
+            justClosed = wasOpen & (self.filamentState <= self.critialFlux)
+            self.filamentState[np.where(justClosed)[0]] = self.filamentState[np.where(justClosed)[0]] / 10
 
 class stimulus__:
     def __init__(self, biasType='DC',

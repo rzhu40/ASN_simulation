@@ -80,9 +80,9 @@ def TE_play(source, destination,
 
     # calcTE.setProperty("NORM_TYPE", "EUCLIDEAN")
 
-    calcTE.setProperty("AUTO_EMBED_METHOD", "MAX_CORR_AIS")
-    calcTE.setProperty("AUTO_EMBED_K_SEARCH_MAX", "2")
-    calcTE.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "2")
+    # calcTE.setProperty("AUTO_EMBED_METHOD", "MAX_CORR_AIS")
+    # calcTE.setProperty("AUTO_EMBED_K_SEARCH_MAX", "2")
+    # calcTE.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "2")
 
     calcTE.initialise()
     calcTE.setObservations(source, destination)
