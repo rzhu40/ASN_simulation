@@ -180,11 +180,26 @@ def Alon_test2(Connectivity, pairing):
                                 contactMode = 'preSet', electrodes= pairing, 
                                 dt= 1e-2, T=2, 
                                 biasType='Pulse', f = 5,
-                                onAmp = 2,
+                                onAmp = 1.5,
                                 findFirst = False, disable_tqdm=True)
     endCurrent = sim.electrodeCurrent[-1,1]
 
     return endCurrent, sim.TimeVector[-1]
+
+def classifier(endTime, endCurrent):
+    emln = np.zeros(len(endTime))
+    for i in range(len(endTime)):
+        if endTime[i] < 0.6:
+            emln[i] = 0
+        elif endTime[i] < 1.4:
+            emln[i] = 1
+        elif endTime[i] < 1.99:
+            emln[i] = 2
+        elif endCurrent[i] > 1e-4:
+            emln[i] = 2
+        else:
+            emln[i] = 3
+    return emln
 
 if __name__ == '__main__':
     import time
@@ -204,7 +219,7 @@ if __name__ == '__main__':
     for this_pairing in tqdm(pairing_list):
         endCurrent[count], endTime[count] = Alon_test2(Connectivity, this_pairing)
         count += 1
-
+    emln = classifier(endTime, endCurrent)
     # for this_pairing in tqdm(pairing_list):
     #     out = Alon_test(Connectivity, this_pairing)
     #     filename = 'data/source_' + str(this_pairing[0]) + '_drain_' + str(this_pairing[1]) + '.mat'

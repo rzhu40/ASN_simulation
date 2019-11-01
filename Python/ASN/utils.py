@@ -39,7 +39,7 @@ class connectivity__:
             self.numOfWires = self.number_of_wires
 
         elif graph != None:
-            self.adj_matrix = nx.adjacency_matrix(graph).todense()
+            self.adj_matrix = np.array(nx.adjacency_matrix(graph).todense())
             self.numOfWires = np.size(self.adj_matrix[:,0])
             self.numOfJunctions = int(np.sum(self.adj_matrix)/2)
             self.edge_list = np.array(np.where(np.triu(self.adj_matrix) == 1)).T
@@ -83,7 +83,7 @@ class junctionState__:
 
     def updateJunctionState(self, dt):
         last_sign = np.sign(self.filamentState)
-        wasOpen = self.filamentState >= self.critialFlux
+        wasOpen = abs(self.filamentState) >= self.critialFlux
 
         self.filamentState = self.filamentState + \
                             (abs(self.voltage) > self.setVoltage) *\
@@ -96,12 +96,13 @@ class junctionState__:
                             
         this_sign = np.sign(self.filamentState)
         change = abs(this_sign - last_sign)
-        self.filamentState[np.where(change == 2)[0]] = 0
+        # self.filamentState[np.where(change == 2)[0]] = 0
         maxPosition = np.where(abs(self.filamentState) > self.maxFlux)[0]
         self.filamentState[maxPosition] = np.sign(self.filamentState[maxPosition]) * \
                                             self.maxFlux
+
         if self.collapse:
-            justClosed = wasOpen & (self.filamentState <= self.critialFlux)
+            justClosed = wasOpen & (abs(self.filamentState) < self.critialFlux)
             self.filamentState[np.where(justClosed)[0]] = self.filamentState[np.where(justClosed)[0]] / 10
 
 class stimulus__:
@@ -244,9 +245,10 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, disable_tqdm
     Network.numOfJunctions = E
     Network.adjMat = connectivity.adj_matrix
     Network.graph = nx.from_numpy_array(connectivity.adj_matrix)
-    Network.shortestPaths = [p for p in nx.all_shortest_paths(Network.graph, 
-                                                        source=Network.sources[0], 
-                                                        target=Network.drains[0])]
+    if nx.has_path(Network.graph, Network.sources[0], Network.drains[0]):
+        Network.shortestPaths = [p for p in nx.all_shortest_paths(Network.graph, 
+                                                            source=Network.sources[0], 
+                                                            target=Network.drains[0])]
     Network.electrodes = simulationOptions.electrodes
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
@@ -265,7 +267,7 @@ def inputPacker(Connectivity,
     packer = [Connectivity, contactMode, electrodes, dt, T, biasType, onTime, offTime, onAmp, offAmp, f]
     return packer
 
-def defaultSimulation(Connectivity, junctionMode = 'binary', 
+def defaultSimulation(Connectivity, junctionMode = 'binary', collapse = False,
                     contactMode='farthest', electrodes=None,
                     dt= 1e-3, T=10, 
                     biasType = 'DC',
@@ -287,7 +289,7 @@ def defaultSimulation(Connectivity, junctionMode = 'binary',
                             f= f, customSignal= cutsomSignal)
     SimulationOptions.stimulus.append(tempStimulus)
 
-    JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode)
+    JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode, collapse = collapse)
 
     this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, disable_tqdm)
     
@@ -301,6 +303,17 @@ def defaultSimulation(Connectivity, junctionMode = 'binary',
             print('Unfortunately, no current path is formed in simulation time.')
 
     return this_realization
+
+def findJunctionIndex(connectivity, wire1, wire2):
+    edgeList = connectivity.edge_list
+    index = np.where((edgeList[:,0] == wire1) & (edgeList[:,1] == wire2))[0]
+    if len(index) == 0:
+        index = np.where((edgeList[:,0] == wire2) & (edgeList[:,1] == wire1))[0]
+    if len(index) == 0:
+        print(f'Unfortunately, no junction between nanowire {wire1} and {wire2}')
+        return None
+    else:
+        return index[0]
 
 def is_notebook():
     try:
