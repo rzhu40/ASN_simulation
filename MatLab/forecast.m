@@ -1,4 +1,4 @@
-function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connectivity, Components, Signals, SimulationOptions, varargin)
+function [OutputDynamics] = forecast(Connectivity, Components, Signals, SimulationOptions)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Simulate network at each time step. Mostly the same as Ido's code.
 % Improved the simulation efficiency by change using nodal analysis.
@@ -18,9 +18,6 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
 %            (time axis details, voltage signal).
 % SimulationOptions - Structure that contains general simulation details that are indepedent of 
 %           the other structures (eg, dt and simulation length);
-% varargin - if not empty, contains an array of indidces in which a
-%            snapshot of the resistances and voltages in the network is
-%            requested. This indices are based on the length of the simulation.
 % OUTPUT:
 % OutputDynamics -- is a struct with the activity of the network
 %                    .networkResistance - the resistance of the network (between the two 
@@ -46,10 +43,6 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     OutputDynamics = runSimulation(Equations, Components, Stimulus);
 %}
 %
-% Authors:
-% Ido Marcus
-% Paula Sanz-Leon
-% Ruomin Zhu
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
     %% Initialize:
@@ -63,25 +56,21 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     RHS             = zeros(V+numOfElectrodes,1); % the first E entries in the RHS vector.
     
     wireVoltage        = zeros(niterations, V);
-    electrodeCurrent   = zeros(niterations, numOfElectrodes);clear
+    electrodeCurrent   = zeros(niterations, numOfElectrodes);
     junctionVoltage    = zeros(niterations, E);
     junctionResistance = zeros(niterations, E);
     junctionFilament   = zeros(niterations, E);
-    %% If snapshots are requested, allocate memory for them:
-    if ~isempty(varargin)
-        snapshots           = cell(size(varargin{1}));
-        snapshots_idx       = sort(varargin{1}); 
-    else
-        nsnapshots          = 10;
-        snapshots           = cell(nsnapshots,1);
-        snapshots_idx       = ceil(logspace(log10(1), log10(niterations), nsnapshots));
-    end
-    kk = 1; % Counter
     
+    train_ratio = 1;
+    training_length = round(niterations*train_ratio);
+    steps = 100;
+    forecast_on = true;
+    update_weight = false;
+    junctionList = [ 222,  302,  419,  497,  572,  584,  605,  627,  829,  831,  847, 854,  986, 1043, 1057, 1104, 1191, 1194, 1240, 1243];
     %% Solve equation systems for every time step and update:
-    for ii = 1 : niterations
+    for ii = 1 : training_length
         % Show progress:
-        progressBar(ii,niterations);
+        progressBar(ii,training_length);
         
         % Update resistance values:
         updateComponentResistance(compPtr); 
@@ -94,7 +83,6 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
         % Something like:
 %         Gmat(edgeList(:,1),edgeList(:,2)) = diag(componentConductance);
 %         Gmat(edgeList(:,2),edgeList(:,1)) = diag(componentConductance);
-        
         
         for i = 1:E
             Gmat(edgeList(i,1),edgeList(i,2)) = componentConductance(i);
@@ -129,41 +117,83 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
         junctionResistance(ii,:) = compPtr.comp.resistance;
         junctionFilament(ii,:)   = compPtr.comp.filamentState;
         
+    end
+    measure = junctionVoltage(1:training_length,junctionList)./junctionResistance(1:training_length,junctionList);
+    
+    weight = getWeight(measure, Signals{1,1}(1:training_length), steps);
+    predict = zeros(niterations,1);
+    predict(1:training_length) = Signals{1,1}(1:training_length);
+    
+    for ii = training_length+1 : niterations
+        % Show progress:
+        progressBar(ii,niterations);
         
-        % Record the activity of the whole network
-        if find(snapshots_idx == ii) 
-                frame.Timestamp  = SimulationOptions.TimeVector(ii);
-                frame.Voltage    = compPtr.comp.voltage;
-                frame.Resistance = compPtr.comp.resistance;
-                frame.OnOrOff    = compPtr.comp.OnOrOff;
-                frame.filamentState = compPtr.comp.filamentState;
-                snapshots{kk} = frame;
-                kk = kk + 1;
+        % Update resistance values:
+        updateComponentResistance(compPtr); 
+        componentConductance = 1./compPtr.comp.resistance;
+        
+        % Get LHS (matrix) and RHS (vector) of equation:
+        Gmat = zeros(V,V);
+        
+        for i = 1:E
+            Gmat(edgeList(i,1),edgeList(i,2)) = componentConductance(i);
+            Gmat(edgeList(i,2),edgeList(i,1)) = componentConductance(i);
+        end
+        
+        Gmat = diag(sum(Gmat, 1)) - Gmat;
+        
+        LHS          = zeros(V+numOfElectrodes, V+numOfElectrodes);
+        LHS(1:V,1:V) = Gmat;
+        paras = length(junctionList);
+        hist = zeros(paras * steps + 2,1);
+        hist(1) = 1;
+        hist(2) = 0;
+        for i = 0:steps-1
+            hist(i*paras+3:(i+1)*paras+2) = measure(ii-i-1,:);
+        end
+        predict(ii) = dot(hist,weight);
+        
+        for i = 1:numOfElectrodes
+            this_elec           = electrodes(i);
+            LHS(V+i,this_elec)  = 1;
+            LHS(this_elec,V+i)  = 1;
+            if i == 1
+                if forecast_on
+                    RHS(V+i)            = predict(ii);
+                else   
+                    RHS(V+i)            = Signals{i,1}(ii);
+                end
+            end
+        end
+        % Solve equation:
+        lhs = sparse(LHS);
+        rhs = sparse(RHS);
+        sol = lhs\rhs;
+%         sol = LHS\RHS;
+        tempWireV = sol(1:V);
+        compPtr.comp.voltage = tempWireV(edgeList(:,1)) - tempWireV(edgeList(:,2));
+        
+        % Update element fields:
+        updateComponentState(compPtr, SimulationOptions.dt);    % ZK: changed to allow retrieval of local values
+        %[lambda_vals(ii,:), voltage_vals(ii,:)] = updateComponentState(compPtr, Stimulus.dt);
+        
+        wireVoltage(ii,:)        = sol(1:V);
+        electrodeCurrent(ii,:)   = sol(V+1:end);
+        junctionVoltage(ii,:)    = compPtr.comp.voltage;
+        junctionResistance(ii,:) = compPtr.comp.resistance;
+        junctionFilament(ii,:)   = compPtr.comp.filamentState;
+        this_measure = junctionVoltage(ii,junctionList)./junctionResistance(ii,junctionList);
+        measure = [measure ; this_measure];
+        if update_weight
+            weight = getWeight(measure, Signals{1,1}(1:training_length), steps);
         end
     end
     
-    % Store some important fields
-    SimulationOptions.SnapshotsIdx = snapshots_idx; % Save these to access the right time from .TimeVector.
-    OutputDynamics.sources = [];
-    OutputDynamics.drains  = [];
-    for i = 1:length(SimulationOptions.electrodes)
-        sourceChecker = sum(Signals{i,1})>0;
-        if sourceChecker
-            OutputDynamics.sources = [OutputDynamics.sources, SimulationOptions.electrodes(i)];
-        else
-            OutputDynamics.drains  = [OutputDynamics.drains, SimulationOptions.electrodes(i)];
-        end
-    end
     % Calculate network resistance and save:
     OutputDynamics.electrodeCurrent   = electrodeCurrent;
     OutputDynamics.wireVoltage        = wireVoltage;
     OutputDynamics.junctionVoltage    = junctionVoltage;
     OutputDynamics.junctionResistance = junctionResistance;
     OutputDynamics.junctionFilament   = junctionFilament;
-    
-    
-
-   
-    
-    
+    OutputDynamics.forecast           = predict;
 end
