@@ -273,7 +273,7 @@ def defaultSimulation(Connectivity, junctionMode = 'binary', collapse = False,
                     biasType = 'DC',
                     onTime=0, offTime=5,
                     onAmp=1.1, offAmp=0.005,
-                    f = 1, cutsomSignal = None,
+                    f = 1, customSignal = None,
                     findFirst = True,
                     disable_tqdm = False):
 
@@ -286,7 +286,7 @@ def defaultSimulation(Connectivity, junctionMode = 'binary', collapse = False,
                             TimeVector = SimulationOptions.TimeVector, 
                             onTime = onTime, offTime = offTime,
                             onAmp = onAmp, offAmp = offAmp,
-                            f= f, customSignal= cutsomSignal)
+                            f= f, customSignal= customSignal)
     SimulationOptions.stimulus.append(tempStimulus)
 
     JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode, collapse = collapse)
