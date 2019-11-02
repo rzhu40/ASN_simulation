@@ -5,27 +5,40 @@ import warnings
 import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
-def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', colorbar=False,**kwargs):
+def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', colorbar=False, TE_mode = 'local', **kwargs):
+    if edge_mode == 'TE':
+        if hasattr(network, 'TE'):
+            TimeVector = network.TimeVector[network.sampling]
+        else:
+            print('No TE attached to network yet. Please calcualte TE first.')
+            from sys import exit
+            exit()
+    else:
+        TimeVector = network.TimeVector
+
     if 'TimeStamp' in kwargs:
             this_TimeStamp = kwargs['TimeStamp']
     elif 'time' in kwargs:
-        if kwargs['time'] in network.TimeVector:
-            this_TimeStamp = np.where(network.TimeVector == kwargs['time'])[0][0]
-        elif (kwargs['time'] < min(network.TimeVector)) or (kwargs['time'] > max(network.TimeVector)):
+        if kwargs['time'] in TimeVector:
+            this_TimeStamp = np.where(TimeVector == kwargs['time'])[0][0]
+            real_TimeStamp = np.where(network.TimeVector == kwargs['time'])[0][0]
+        elif (kwargs['time'] < min(TimeVector)) or (kwargs['time'] > max(TimeVector)):
             print('Input time exceeds simulation period.')
-            this_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
+            this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
+            real_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
         else:
-            this_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
+            this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
+            real_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
     else:
         this_TimeStamp = 0
-
+    
     G = network.graph
     pos = nx.layout.kamada_kawai_layout(G)   
     edgeList = network.connectivity.edge_list
     sources = network.sources
     drains = network.drains
 
-    this_switch = network.junctionSwitch[this_TimeStamp, :]
+    this_switch = network.junctionSwitch[real_TimeStamp, :]
 
     if edge_mode == 'current':
         graphView = nx.DiGraph()
@@ -67,17 +80,22 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
             else:
                 graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = network.Lyapunov[i], width = 1, style='dashed')
 
-    
+    elif edge_mode == 'TE':
+        graphView = nx.empty_graph(network.numOfWires)
+        if TE_mode == 'local':
+            this_TE = network.TE[this_TimeStamp,:]
+        elif TE_mode == 'average':
+            this_TE = np.mean(network.TE[:this_TimeStamp,:], axis = 0)
+
+        for i in range(network.numOfJunctions):
+            if this_switch[i]:
+                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = this_TE[i], width = 2, style='solid')
+            else:
+                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = this_TE[i], width = 1, style='dashed')
+
     from analysis.GraphTheory import onGraph
-    tempGraph = onGraph(network, this_TimeStamp=this_TimeStamp)
+    tempGraph = onGraph(network, this_TimeStamp=real_TimeStamp)
     pathFormed = nx.has_path(tempGraph, sources[0], drains[0])
-    
-    # tempPaths = [i for i in nx.all_simple_paths(tempGraph, sources[0], drains[0])]
-    # pathFormed = len(tempPaths) > 0
-    
-    # diEdgeList = np.array(list(graphView.edges))
-    # edge_colors = [graphView[diEdgeList[i,0]][diEdgeList[i,1]]['weight'] for i in range(len(graphView.edges))]
-    # widths = this_switch+1
 
     edge_colors = [graphView[u][v]['weight'] for u,v in graphView.edges]
     widths = [graphView[u][v]['width'] for u,v in graphView.edges]
@@ -94,7 +112,6 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         fig, ax = plt.subplots(figsize=figsize)
         ax.axis('off')
     
-
     if pathFormed:
         cmap = plt.cm.Reds
     else:
@@ -112,6 +129,9 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     elif edge_mode == 'Lyapunov':
         cmap_min = np.min(network.Lyapunov)
         cmap_max = np.max(network.Lyapunov)
+    elif edge_mode == 'TE':
+        cmap_min = np.min(this_TE)
+        cmap_max = np.max(this_TE)
 
     nx.draw_networkx(graphView, pos,
                     node_size=350,
@@ -129,15 +149,17 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         nx.draw_networkx_edges(G, pos, width = 1, alpha = 0.15, ax=ax)
 
     ax.set_facecolor((0.8,0.8,0.8))
-    ax.set_title('Network '+edge_mode+f' at t = {np.round(network.TimeVector[this_TimeStamp],3)}')
+    if (edge_mode == 'TE') & (TE_mode == 'average'):
+        ax.set_title(f'Network average TE from t = 0 to {np.round(TimeVector[this_TimeStamp],3)}')
+    else:
+        ax.set_title('Network '+edge_mode+f' at t = {np.round(TimeVector[this_TimeStamp],3)}')
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
     
-    if colorbar:
-        fig.set_size_inches((figsize[0]*1.2, figsize[1]))
+    if colorbar:        
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=cmap_min, vmax=cmap_max))
         sm.set_array([])
-        cbar = fig.colorbar(sm, ax=ax,
+        cbar = plt.colorbar(sm, ax=ax,
                             fraction = 0.05, label=edge_mode)
 
     return ax
