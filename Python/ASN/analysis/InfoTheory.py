@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from jpype import *
-
+from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore",category=UserWarning)
 
@@ -21,7 +21,7 @@ def readFloatsFile(filename):
 			array.append([float(x) for x in line.split()])
 		return array
 
-def AIS_play(data, k = 1, tau = 1, 
+def calc_AIS(data, k = 1, tau = 1, 
             calculator='kraskov', calc_type='average'):
     jarLocation = r"C:\Users\rzhu\Documents\PhD\JIDT\infodynamics.jar"
     if not isJVMStarted():
@@ -56,8 +56,8 @@ def AIS_play(data, k = 1, tau = 1,
         return None
     return AISvalue
 
-def TE_play(source, destination, 
-            k_hist = 1, k_tau = 1, l_hist = 1, l_tau = 1, 
+def calc_TE(source, destination, auto_embed = True,
+            k_hist = 1, k_tau = 1, l_hist = 1, l_tau = 1,
             calculator='kraskov', calc_type='average'):
 
     jarLocation = r"C:\Users\rzhu\Documents\PhD\JIDT\infodynamics.jar"
@@ -67,22 +67,25 @@ def TE_play(source, destination,
     if calculator == 'kraskov':
         calcTEClass = JPackage("infodynamics.measures.continuous.kraskov").TransferEntropyCalculatorKraskov
         calcTE = calcTEClass()
-        calcTE.setProperty("NOISE_LEVEL_TO_ADD", "0")
+        # calcTE.setProperty("NOISE_LEVEL_TO_ADD", "0")
         calcTE.setProperty("ALG_NUM", "1")
+
     elif calculator == 'gaussian':
         calcTEClass = JPackage("infodynamics.measures.continuous.gaussian").TransferEntropyCalculatorGaussian
         calcTE = calcTEClass()
 
-    calcTE.setProperty("k_HISTORY", str(k_hist))
-    calcTE.setProperty("k_TAU", str(k_tau))
-    calcTE.setProperty("l_HISTORY", str(l_hist))
-    calcTE.setProperty("l_TAU", str(l_tau))
+    if auto_embed:
+        calcTE.setProperty("AUTO_EMBED_METHOD", "MAX_CORR_AIS_DEST_ONLY")
+        calcTE.setProperty("AUTO_EMBED_K_SEARCH_MAX", "10")
+        calcTE.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "3")
+        # print(calcTE.getProperty('k_HISTORY'))
+        # print(calcTE.getProperty('k_TAU'))
 
-    # calcTE.setProperty("NORM_TYPE", "EUCLIDEAN")
-
-    # calcTE.setProperty("AUTO_EMBED_METHOD", "MAX_CORR_AIS")
-    # calcTE.setProperty("AUTO_EMBED_K_SEARCH_MAX", "2")
-    # calcTE.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "2")
+    else:
+        calcTE.setProperty("k_HISTORY", str(k_hist))
+        calcTE.setProperty("k_TAU", str(k_tau))
+        calcTE.setProperty("l_HISTORY", str(l_hist))
+        calcTE.setProperty("l_TAU", str(l_tau))
 
     calcTE.initialise()
     calcTE.setObservations(source, destination)
@@ -95,3 +98,31 @@ def TE_play(source, destination,
         print('Calculation Type not right')
         return None
     return TEvalue
+
+def calc_networkTE(Network, average = False, average_mode = 'time'):
+    if not hasattr(Network, 'sampling'):
+        sampling = np.arange(0,Network.TimeVector.size,1)
+    else:
+        sampling = Network.sampling
+        
+    wireVoltage = Network.wireVoltage
+    E = Network.numOfJunctions
+    TE = np.zeros((sampling.size, E))
+    edgeList = Network.connectivity.edge_list
+    for i in tqdm(range(len(edgeList)), desc = 'Calculating TE '):
+        wire1, wire2 = edgeList[i,:]
+        try:
+            TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
+        except:
+            TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+    
+    Network.TE = TE
+    Network.sampling = sampling
+    
+    if average:
+        if average_mode == 'time':
+            return np.mean(TE, axis = 0)
+        elif average_mode == 'junction':
+            return np.mean(TE, axis = 1)
+    else:
+        return TE
