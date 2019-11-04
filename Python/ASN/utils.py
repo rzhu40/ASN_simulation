@@ -110,7 +110,9 @@ class stimulus__:
                 TimeVector=np.arange(0, 1e1, 1e-3), 
                 onTime=1, offTime=2,
                 onAmp=1.1, offAmp=0.005,
-                f = 1, customSignal = None):
+                f = 1, shift = 0, 
+                customSignal = None):
+
         period = 1/f
         offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
         if biasType == 'Drain':
@@ -129,7 +131,10 @@ class stimulus__:
             self.signal = onAmp/period * (TimeVector % period)
         elif biasType == 'Pulse':
             self.signal= (onAmp-offAmp)*((TimeVector % period) < period/2) + np.ones(TimeVector.size)*offAmp
-            offIndex = np.where((TimeVector<=onTime) + (TimeVector>=offTime))
+        elif biasType == 'MKG':
+            from analysis.mkg import mkg_generator
+            mkg_period = int(1/f/(TimeVector[1]-TimeVector[0]))
+            self.signal = mkg_generator(TimeVector.size, dt = 100/mkg_period)*onAmp
         elif biasType == 'Custom': 
             if len(customSignal) >= TimeVector.size:
                 self.signal = np.array(customSignal[0:TimeVector.size])
@@ -140,10 +145,13 @@ class stimulus__:
         else:
             # self.signal = np.ones(TimeVector.size) * offAmp
             print('Stimulus type error. Options are: ')
-            print('Drain | DC | AC | Square | Triangular | Sawtooth | Pulse | Custom')
+            print('Drain | DC | AC | Square | Triangular | Sawtooth | Pulse | MKG | Custom')
             from sys import exit
             exit()
-        
+
+        if shift != 0:
+            self.signal += shift
+
         if (biasType != 'Custom') and (biasType != 'Drain'):
             self.signal[offIndex] = offAmp
             
@@ -218,7 +226,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, disable_tqdm
         lhs = np.zeros((V+numOfElectrodes, V+numOfElectrodes))
         lhs[0:V,0:V] = Gmat
         for i in range(numOfElectrodes):
-            this_elec = electrodes[i],
+            this_elec = electrodes[i]
             lhs[V+i, this_elec] = 1
             lhs[this_elec, V+i] = 1
             rhs[V+i] = simulationOptions.stimulus[i].signal[this_time]
