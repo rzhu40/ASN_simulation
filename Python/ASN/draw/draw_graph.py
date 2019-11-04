@@ -31,6 +31,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
             real_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
     else:
         this_TimeStamp = 0
+        real_TimeStamp = 0
     
     G = network.graph
     pos = nx.layout.kamada_kawai_layout(G)   
@@ -43,7 +44,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     if edge_mode == 'current':
         graphView = nx.DiGraph()
         graphView.add_nodes_from(range(network.numOfWires))
-        this_current = network.junctionVoltage[this_TimeStamp,:]/network.junctionResistance[this_TimeStamp,:]
+        this_current = network.junctionVoltage[real_TimeStamp,:]/network.junctionResistance[real_TimeStamp,:]
         for i in range(network.numOfJunctions):
             if this_switch[i]:
                 if this_current[i]>0:
@@ -93,8 +94,8 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
             else:
                 graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = this_TE[i], width = 1, style='dashed')
 
-    from analysis.GraphTheory import onGraph
-    tempGraph = onGraph(network, this_TimeStamp=real_TimeStamp)
+    from analysis.GraphTheory import getOnGraph
+    tempGraph = getOnGraph(network, this_TimeStamp=real_TimeStamp)
     pathFormed = nx.has_path(tempGraph, sources[0], drains[0])
 
     edge_colors = [graphView[u][v]['weight'] for u,v in graphView.edges]

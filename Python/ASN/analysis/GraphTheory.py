@@ -3,7 +3,7 @@ import networkx as nx
 from itertools import islice
 
 # def generateGrid()
-def onGraph(network, this_TimeStamp = 0):
+def getOnGraph(network, this_TimeStamp = 0):
     edgeList = network.connectivity.edge_list
     source = network.sources[0]
     drain = network.drains[0]
@@ -25,8 +25,7 @@ def findCurrent(network, numToFind = 1):
     numFound = 0
     PathList = []
     foundTime = []
-    onGraph = nx.DiGraph()
-    onGraph.add_nodes_from(range(network.numOfWires))
+    onGraph = getOnGraph(network, 0)
     last_direction = np.zeros(network.numOfJunctions)
     for this_time in range(1,network.TimeVector.size):
         this_direction = np.sign(network.junctionVoltage[this_time,:]/network.junctionResistance[this_time,:]*network.junctionSwitch[this_time,:])
@@ -34,17 +33,8 @@ def findCurrent(network, numToFind = 1):
         changed_pos = np.where(flag == False)[0]
         if changed_pos.size == 0:
             continue
-        for i in changed_pos:
-            # remove exsiting edges at this position
-            if last_direction[i] == 1:
-                onGraph.remove_edge(edgeList[i,0], edgeList[i,1])
-            elif last_direction[i] == -1:
-                onGraph.remove_edge(edgeList[i,1], edgeList[i,0])
-            
-            if this_direction[i] == 1:
-                onGraph.add_edge(edgeList[i,0], edgeList[i,1])
-            elif this_direction[i] == -1:
-                onGraph.add_edge(edgeList[i,1], edgeList[i,0])
+        else:
+            onGraph = getOnGraph(network, this_time)
         
         pathFormed = nx.has_path(onGraph, source, drain)
         if pathFormed:
@@ -62,8 +52,8 @@ def findCurrent(network, numToFind = 1):
     if numFound < numToFind:
         print(f'Unfortunately, only {numFound} current paths found in simulation time.')
 
-    if numFound == 0:
-        return None
+    # if numFound == 0:
+    #     return None
     return PathList, foundTime
 
 def wireDistanceToSource(network):
