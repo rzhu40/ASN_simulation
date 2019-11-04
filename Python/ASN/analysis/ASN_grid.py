@@ -96,7 +96,8 @@ def forecast(simulationOptions, connectivity, junctionState,
             training_ratio = 0.5, steps = 1,
             measure_type = 'conductance',
             pre_activate = False,
-            forecast_on = False, cheat = False,
+            forecast_on = False, 
+            cheat_on = False, cheat_period = 75, cheat_steps = 25,
             update_weight = False, update_stepsize = 1):
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
@@ -169,7 +170,6 @@ def forecast(simulationOptions, connectivity, junctionState,
     outList = np.where(connectivity.adj_matrix[Network.drains[0],:] == 1)[0]
     junctionList = [findJunctionIndex(connectivity, Network.drains[0], i) for i in outList]
 
-
     if measure_type == 'conductance':
         stimulus_packer = np.array([simulationOptions.stimulus[0].signal[:training_length]]*len(junctionList)).T
         measure = Network.junctionVoltage[:training_length,junctionList]/Network.junctionResistance[:training_length,junctionList]/stimulus_packer
@@ -213,7 +213,7 @@ def forecast(simulationOptions, connectivity, junctionState,
             lhs[this_elec, V+i] = 1
             if i == 0:
                 if forecast_on:
-                    if cheat & (this_time % 40 > 20):
+                    if cheat_on & (this_time % cheat_period > cheat_period-cheat_steps-1):
                         predict[this_time] = simulationOptions.stimulus[i].signal[this_time]
                     rhs[V+i] = predict[this_time]
                 else:
