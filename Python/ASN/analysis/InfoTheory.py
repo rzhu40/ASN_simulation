@@ -109,16 +109,21 @@ def calc_networkTE(Network, average = False, average_mode = 'time'):
     E = Network.numOfJunctions
     TE = np.zeros((sampling.size, E))
     edgeList = Network.connectivity.edge_list
+    mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
     for i in tqdm(range(len(edgeList)), desc = 'Calculating TE '):
-        wire1, wire2 = edgeList[i,:]
+        if mean_direction[i] >= 0:
+            wire1, wire2 = edgeList[i,:]
+        else:
+            wire2, wire1 = edgeList[i,:]
         try:
             TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
         except:
-            TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+            continue
+        #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
     
     Network.TE = TE
     Network.sampling = sampling
-    
+
     if average:
         if average_mode == 'time':
             return np.mean(TE, axis = 0)
