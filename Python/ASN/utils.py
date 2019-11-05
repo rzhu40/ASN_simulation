@@ -20,7 +20,7 @@ class simulation_options__:
         self.stimulus = []
 
 class connectivity__:
-    def __init__(self, filename=None, wires_dict=None, graph=None):
+    def __init__(self, filename=None, wires_dict=None, graph=None, adjMat = None):
         if filename != None:
             fullpath = 'connectivity_data/' + filename
             matfile = sio.loadmat(fullpath, squeeze_me=True, struct_as_record=False)
@@ -44,12 +44,17 @@ class connectivity__:
             self.numOfJunctions = int(np.sum(self.adj_matrix)/2)
             self.edge_list = np.array(np.where(np.triu(self.adj_matrix) == 1)).T
 
+        elif adjMat.all() != None:
+            self.adj_matrix = np.array(adjMat)
+            self.numOfWires = np.size(adjMat[:,0])
+            self.numOfJunctions = int(np.sum(adjMat)/2)
+            self.edge_list = np.array(np.where(np.triu(adjMat) == 1)).T
 
 class junctionState__:
     def __init__(self, numOfJunctions, 
                 mode = 'binary', collapse = False,
                 setVoltage=1e-2, resetVoltage=1e-3,
-                onResistance = 1e4, offResistance = 1e7,
+                onResistance=1e4, offResistance=1e7,
                 criticalFlux=1e-1, maxFlux=1.5e-1):
         self.mode = mode
         self.collapse = collapse
@@ -77,12 +82,13 @@ class junctionState__:
             J1 = 0.0000471307
             A = 0.17
             d = (0.1 - abs(self.filamentState))*50
-            d[np.where(d<0)[0]] = 0
+            # d[np.where(d<0)[0]] = 0
+            d[d<0] = 0 
             tun = 2/A * d**2 / phi**0.5 * np.exp(C0*phi**2 * d)/J1
             self.resistance = 1/(1/(tun + self.onResistance[0]) + 1/self.offResistance[0])
 
     def updateJunctionState(self, dt):
-        last_sign = np.sign(self.filamentState)
+        # last_sign = np.sign(self.filamentState)
         wasOpen = abs(self.filamentState) >= self.critialFlux
 
         self.filamentState = self.filamentState + \
@@ -90,20 +96,25 @@ class junctionState__:
                             (abs(self.voltage) - self.setVoltage) *\
                             np.sign(self.voltage) * dt
         self.filamentState = self.filamentState - \
-                            (abs(self.voltage) < self.resetVoltage) *\
+                            (self.resetVoltage > abs(self.voltage)) *\
                             (self.resetVoltage - abs(self.voltage)) *\
                             np.sign(self.filamentState) * dt * 10    
                             
-        this_sign = np.sign(self.filamentState)
-        change = abs(this_sign - last_sign)
+        # this_sign = np.sign(self.filamentState)
+        # change = abs(this_sign - last_sign)
         # self.filamentState[np.where(change == 2)[0]] = 0
-        maxPosition = np.where(abs(self.filamentState) > self.maxFlux)[0]
-        self.filamentState[maxPosition] = np.sign(self.filamentState[maxPosition]) * \
-                                            self.maxFlux
+
+        # maxPosition = np.where(abs(self.filamentState) > self.maxFlux)[0]
+        # self.filamentState[maxPosition] = np.sign(self.filamentState[maxPosition]) *\
+        #                                     self.maxFlux
+
+        self.filamentState[abs(self.filamentState) > self.maxFlux] = \
+                    np.sign(self.filamentState[abs(self.filamentState) > self.maxFlux]) * self.maxFlux
 
         if self.collapse:
             justClosed = wasOpen & (abs(self.filamentState) < self.critialFlux)
-            self.filamentState[np.where(justClosed)[0]] = self.filamentState[np.where(justClosed)[0]] / 10
+            # self.filamentState[np.where(justClosed)[0]] = self.filamentState[np.where(justClosed)[0]] / 10
+            self.filamentState[justClosed] = self.filamentState[np.where(justClosed)[0]] / 10
 
 class stimulus__:
     def __init__(self, biasType='DC',
