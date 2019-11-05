@@ -94,7 +94,6 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetworkLite(Co
 %         Gmat(edgeList(:,1),edgeList(:,2)) = diag(componentConductance);
 %         Gmat(edgeList(:,2),edgeList(:,1)) = diag(componentConductance);
         
-        
         for i = 1:E
             Gmat(edgeList(i,1),edgeList(i,2)) = componentConductance(i);
             Gmat(edgeList(i,2),edgeList(i,1)) = componentConductance(i);

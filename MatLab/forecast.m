@@ -61,16 +61,21 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
     junctionResistance = zeros(niterations, E);
     junctionFilament   = zeros(niterations, E);
     
-    train_ratio = 1;
+    train_ratio = 0.24;
     training_length = round(niterations*train_ratio);
     steps = 100;
     forecast_on = true;
     update_weight = false;
-    junctionList = [ 222,  302,  419,  497,  572,  584,  605,  627,  829,  831,  847, 854,  986, 1043, 1057, 1104, 1191, 1194, 1240, 1243];
+    update_stepsize = 75;
+    cheat_on = true;
+%     junctionList = [ 222,  302,  419,  497,  572,  584,  605,  627,  829,  831,  847, 854,  986, 1043, 1057, 1104, 1191, 1194, 1240, 1243];
+    junctionList = [327, 949, 1696, 1799, 2726, 3369, 3789, 4125, 4770, 5363];
+    cheat_index = [];
+    update_index = [];
     %% Solve equation systems for every time step and update:
     for ii = 1 : training_length
         % Show progress:
-        progressBar(ii,training_length);
+        progressBar(ii,niterations);
         
         % Update resistance values:
         updateComponentResistance(compPtr); 
@@ -78,11 +83,6 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
         
         % Get LHS (matrix) and RHS (vector) of equation:
         Gmat = zeros(V,V);
-        
-        % This line can be written in a more efficient vetorized way.
-        % Something like:
-%         Gmat(edgeList(:,1),edgeList(:,2)) = diag(componentConductance);
-%         Gmat(edgeList(:,2),edgeList(:,1)) = diag(componentConductance);
         
         for i = 1:E
             Gmat(edgeList(i,1),edgeList(i,2)) = componentConductance(i);
@@ -147,7 +147,7 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
         paras = length(junctionList);
         hist = zeros(paras * steps + 2,1);
         hist(1) = 1;
-        hist(2) = 0;
+        hist(2) = predict(ii-1);
         for i = 0:steps-1
             hist(i*paras+3:(i+1)*paras+2) = measure(ii-i-1,:);
         end
@@ -159,7 +159,12 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
             LHS(this_elec,V+i)  = 1;
             if i == 1
                 if forecast_on
+                    if cheat_on && (mod(ii-training_length, 50)>24)
+                        cheat_index = [cheat_index, ii];
+                        predict(ii) = Signals{i,1}(ii);
+                    end
                     RHS(V+i)            = predict(ii);
+                    
                 else   
                     RHS(V+i)            = Signals{i,1}(ii);
                 end
@@ -184,8 +189,9 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
         junctionFilament(ii,:)   = compPtr.comp.filamentState;
         this_measure = junctionVoltage(ii,junctionList)./junctionResistance(ii,junctionList);
         measure = [measure ; this_measure];
-        if update_weight
-            weight = getWeight(measure, Signals{1,1}(1:training_length), steps);
+        if update_weight && (mod(ii-training_length, update_stepsize) == 0)
+            update_index = [update_index, this_time];
+            weight = getWeight(measure, Signals{1,1}(1:ii), steps);
         end
     end
     
@@ -196,4 +202,7 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
     OutputDynamics.junctionResistance = junctionResistance;
     OutputDynamics.junctionFilament   = junctionFilament;
     OutputDynamics.forecast           = predict;
+    OutputDynamics.weight             = weight;
+    OutputDynamics.cheat_index        = cheat_index;
+    OutputDynamics.update_index       = update_index;
 end

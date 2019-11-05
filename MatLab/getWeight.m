@@ -7,8 +7,8 @@ lhs = zeros(training_length-steps, E*steps+2);
 rhs = signal(steps+1:training_length);
 
 lhs(:,1) = 1;
-% lhs(:,2) = signal(steps:training_length-1);
-lhs(:,2) = 0;
+lhs(:,2) = signal(steps:training_length-1);
+
 for i = 0:steps-1
     lhs(:, i*E+3:(i+1)*E+2) = measure(steps-i:training_length-i-1,:);
 end 
