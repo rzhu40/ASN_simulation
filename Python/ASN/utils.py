@@ -82,7 +82,6 @@ class junctionState__:
             J1 = 0.0000471307
             A = 0.17
             d = (0.1 - abs(self.filamentState))*50
-            # d[np.where(d<0)[0]] = 0
             d[d<0] = 0 
             tun = 2/A * d**2 / phi**0.5 * np.exp(C0*phi**2 * d)/J1
             self.resistance = 1/(1/(tun + self.onResistance[0]) + 1/self.offResistance[0])
@@ -104,16 +103,11 @@ class junctionState__:
         # change = abs(this_sign - last_sign)
         # self.filamentState[np.where(change == 2)[0]] = 0
 
-        # maxPosition = np.where(abs(self.filamentState) > self.maxFlux)[0]
-        # self.filamentState[maxPosition] = np.sign(self.filamentState[maxPosition]) *\
-        #                                     self.maxFlux
-
         self.filamentState[abs(self.filamentState) > self.maxFlux] = \
                     np.sign(self.filamentState[abs(self.filamentState) > self.maxFlux]) * self.maxFlux
 
         if self.collapse:
             justClosed = wasOpen & (abs(self.filamentState) < self.critialFlux)
-            # self.filamentState[np.where(justClosed)[0]] = self.filamentState[np.where(justClosed)[0]] / 10
             self.filamentState[justClosed] = self.filamentState[np.where(justClosed)[0]] / 10
 
 class stimulus__:
