@@ -63,7 +63,7 @@ function [OutputDynamics, SimulationOptions, snapshots] = simulateNetwork(Connec
     RHS             = zeros(V+numOfElectrodes,1); % the first E entries in the RHS vector.
     
     wireVoltage        = zeros(niterations, V);
-    electrodeCurrent   = zeros(niterations, numOfElectrodes);clear
+    electrodeCurrent   = zeros(niterations, numOfElectrodes);
     junctionVoltage    = zeros(niterations, E);
     junctionResistance = zeros(niterations, E);
     junctionFilament   = zeros(niterations, E);

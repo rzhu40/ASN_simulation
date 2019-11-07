@@ -61,15 +61,20 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
     junctionResistance = zeros(niterations, E);
     junctionFilament   = zeros(niterations, E);
     
-    train_ratio = 0.24;
+    train_ratio = 0.3;
     training_length = round(niterations*train_ratio);
-    steps = 100;
+    steps = 50;
     forecast_on = true;
+    
     update_weight = false;
     update_stepsize = 75;
+    
     cheat_on = true;
-%     junctionList = [ 222,  302,  419,  497,  572,  584,  605,  627,  829,  831,  847, 854,  986, 1043, 1057, 1104, 1191, 1194, 1240, 1243];
-    junctionList = [327, 949, 1696, 1799, 2726, 3369, 3789, 4125, 4770, 5363];
+    cheat_period = 100;
+    cheat_steps = 60;
+    
+    junctionList = [ 222,  302,  419,  497,  572,  584,  605,  627,  829,  831,  847, 854,  986, 1043, 1057, 1104, 1191, 1194, 1240, 1243];
+%     junctionList = [327, 949, 1696, 1799, 2726, 3369, 3789, 4125, 4770, 5363];
     cheat_index = [];
     update_index = [];
     %% Solve equation systems for every time step and update:
@@ -118,7 +123,8 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
         junctionFilament(ii,:)   = compPtr.comp.filamentState;
         
     end
-    measure = junctionVoltage(1:training_length,junctionList)./junctionResistance(1:training_length,junctionList);
+    measure = junctionVoltage(1:training_length,junctionList);
+%     measure = junctionVoltage(1:training_length,junctionList)./junctionResistance(1:training_length,junctionList);
     
     weight = getWeight(measure, Signals{1,1}(1:training_length), steps);
     predict = zeros(niterations,1);
@@ -159,7 +165,7 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
             LHS(this_elec,V+i)  = 1;
             if i == 1
                 if forecast_on
-                    if cheat_on && (mod(ii-training_length, 50)>24)
+                    if cheat_on && (mod(ii-training_length, cheat_period)>(cheat_period-cheat_steps-1))
                         cheat_index = [cheat_index, ii];
                         predict(ii) = Signals{i,1}(ii);
                     end
@@ -187,7 +193,8 @@ function [OutputDynamics] = forecast(Connectivity, Components, Signals, Simulati
         junctionVoltage(ii,:)    = compPtr.comp.voltage;
         junctionResistance(ii,:) = compPtr.comp.resistance;
         junctionFilament(ii,:)   = compPtr.comp.filamentState;
-        this_measure = junctionVoltage(ii,junctionList)./junctionResistance(ii,junctionList);
+%         this_measure = junctionVoltage(ii,junctionList)./junctionResistance(ii,junctionList);
+        this_measure = junctionVoltage(ii,junctionList);
         measure = [measure ; this_measure];
         if update_weight && (mod(ii-training_length, update_stepsize) == 0)
             update_index = [update_index, this_time];

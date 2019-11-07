@@ -10,7 +10,7 @@ s = rng;
 %% Simulation general options:
 SimulationOptions.seed = s;    % save
 SimulationOptions.dt = 1e-3;   % (sec)
-SimulationOptions.T  = 2;    % (sec) duration of simulation
+SimulationOptions.T  = 20;    % (sec) duration of simulation
 SimulationOptions.TimeVector = (SimulationOptions.dt:SimulationOptions.dt:SimulationOptions.T)';
 SimulationOptions.NumberOfIterations = length(SimulationOptions.TimeVector);  
 
@@ -43,17 +43,17 @@ Components = initializeComponents(Connectivity.NumberOfEdges,Components);
 %% Initialize stimulus:
 Signals = cell(SimulationOptions.numOfElectrodes,1);
 
-% Stimulus1.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-% Stimulus1.OnTime         = 0.0; 
-% Stimulus1.OffTime        = 1.0;
-% Stimulus1.AmplitudeOn    = 1.1;
-% Stimulus1.AmplitudeOff   = 0.005;
-% Signals{1,1} = getStimulus(Stimulus1, SimulationOptions);
-
-Stimulus1.BiasType       = 'DC';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
-Stimulus1.Amplitude    = 1.4;
+Stimulus1.BiasType       = 'SinglePulse';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
+Stimulus1.OnTime         = 0.0; 
+Stimulus1.OffTime        = 1.0;
+Stimulus1.AmplitudeOn    = 1.1;
 Stimulus1.AmplitudeOff   = 0.005;
 Signals{1,1} = getStimulus(Stimulus1, SimulationOptions);
+
+% Stimulus1.BiasType       = 'DC';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
+% Stimulus1.Amplitude    = 1.4;
+% Stimulus1.AmplitudeOff   = 0.005;
+% Signals{1,1} = getStimulus(Stimulus1, SimulationOptions);
 
 Stimulus2.BiasType       = 'Drain';           % 'DC' \ 'AC' \ 'DCandWait' \ 'Ramp'
 Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
@@ -77,7 +77,7 @@ Signals{2,1} = getStimulus(Stimulus2, SimulationOptions);
 
 %% Simulate:
 fprintf('Running simulation ...')
-[Output, SimulationOptions, snapshots] = simulateNetworkLite(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
+[Output, SimulationOptions, snapshots] = simulateNetwork(Connectivity, Components, Signals, SimulationOptions); % (Ohm)
 fprintf('\n')
 % run DataExport.m
 toc 
