@@ -54,7 +54,7 @@ def generate_ASN_grid(numOfNetworks, wires_per_network):
 
     return bigMat
 
-def getWeight(measure, stimulus, steps = 1, WLS = False, target = None):
+def getWeight(measure, stimulus, steps = 1, WLS = False, target = None, past_signal=True):
     training_length, E = measure.shape
     if training_length-steps < E*steps+2:
         print('Linear system under determined. Try longer Simulaation time.')
@@ -63,7 +63,8 @@ def getWeight(measure, stimulus, steps = 1, WLS = False, target = None):
     lhs = np.zeros((training_length-steps, E*steps+2))
     rhs = stimulus[steps:training_length]
     lhs[:,0] = 1
-    lhs[:,1] = stimulus[steps-1:training_length-1]
+    if past_signal:
+        lhs[:,1] = stimulus[steps-1:training_length-1]
     for i in range(steps):
         lhs[:,i*E+2:(i+1)*E+2] = measure[steps-i-1:training_length-i-1,:]
     if WLS:
@@ -92,10 +93,13 @@ def pre_activation(sim_options, connectivity, junctionState):
     pre = simulateNetwork(SimulationOptions, connectivity, junctionState)
     return pre
 
+def getRNMSE(predict, real):
+    return np.sqrt( np.sum((predict-real)**2) / np.sum(real**2))
+
 def forecast(simulationOptions, connectivity, junctionState, 
             training_ratio = 0.5, steps = 1,
             measure_type = 'conductance',
-            pre_activate = False,
+            pre_activate = False, past_signal = True,
             forecast_on = False, 
             cheat_on = False, cheat_period = 75, cheat_steps = 25,
             update_weight = False, update_stepsize = 1):
@@ -180,7 +184,7 @@ def forecast(simulationOptions, connectivity, junctionState,
     elif measure_type == 'voltage':
         measure = Network.wireVoltage[:training_length,outList]
 
-    weight = getWeight(measure, simulationOptions.stimulus[0].signal[:training_length], steps)
+    weight = getWeight(measure, simulationOptions.stimulus[0].signal[:training_length], steps, past_signal = past_signal)
     predict = np.zeros(niterations)
     predict[:training_length] = simulationOptions.stimulus[0].signal[:training_length]
     cheat_index = []
@@ -199,7 +203,8 @@ def forecast(simulationOptions, connectivity, junctionState,
         paras = len(junctionList)
         hist = np.zeros(paras*steps+2)
         hist[0] = 1
-        hist[1] = predict[this_time-1]
+        if past_signal:
+            hist[1] = predict[this_time-1]
 
         for i in range(steps):
             hist[i*paras+2:(i+1)*paras+2] = measure[this_time-1-i,:]
@@ -212,7 +217,7 @@ def forecast(simulationOptions, connectivity, junctionState,
             if i == 0:
                 if forecast_on:
                     if cheat_on & ((this_time-training_length) % cheat_period > cheat_period-cheat_steps-1):
-                        predict[this_time] = simulationOptions.stimulus[i].signal[this_time]
+                        predict[this_time] = simulationOptions.stimulus[0].signal[this_time]
                         cheat_index.append(this_time)
                     rhs[V+i] = predict[this_time]
                 else:
@@ -242,7 +247,7 @@ def forecast(simulationOptions, connectivity, junctionState,
         
         if update_weight & (this_time-training_length % update_stepsize == 0):
             update_index.append(this_time)
-            weight = getWeight(measure[:this_time,:],simulationOptions.stimulus[0].signal[:this_time], steps)
+            weight = getWeight(measure[:this_time,:],simulationOptions.stimulus[0].signal[:this_time], steps, past_signal = past_signal)
             # weight = getWeight(measure[:this_time,:],forecast[:this_time], steps)
 
     
@@ -264,7 +269,10 @@ def forecast(simulationOptions, connectivity, junctionState,
     Network.junctionList = junctionList
     Network.weight = weight
     Network.cheat_index = np.array(cheat_index)
+    original = np.arange(training_length, Network.TimeVector.size, 1)
+    Network.predict_index = np.setdiff1d(original, cheat_index)
     Network.update_index = np.array(update_index)
+    Network.rNMSE = getRNMSE(predict[Network.predict_index], simulationOptions.stimulus[0].signal[Network.predict_index])
     return Network, weight, measure
 
 def plotForecastPanel(Network):
