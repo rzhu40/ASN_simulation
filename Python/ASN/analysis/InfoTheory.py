@@ -99,9 +99,12 @@ def calc_TE(source, destination, auto_embed = True,
         return None
     return TEvalue
 
-def calc_networkTE(Network, average = False, average_mode = 'time'):
+def calc_networkTE(Network, average = False, samples_per_sec = 10,average_mode = 'time'):
     if not hasattr(Network, 'sampling'):
-        sampling = np.arange(0,Network.TimeVector.size,1)
+        dt = Network.TimeVector[1] - Network.TimeVector[0]
+        sampling = np.arange(0,Network.TimeVector.size, int(1/dt/samples_per_sec))
+        sampling = sampling
+        Network.sampling = sampling
     else:
         sampling = Network.sampling
         
@@ -122,7 +125,6 @@ def calc_networkTE(Network, average = False, average_mode = 'time'):
         #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
     
     Network.TE = TE
-    Network.sampling = sampling
 
     if average:
         if average_mode == 'time':
