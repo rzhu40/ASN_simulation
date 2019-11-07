@@ -265,7 +265,6 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, disable_tqdm
     Network.electrodes = simulationOptions.electrodes
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
-    # Network.junctionList = np.add(connectivity.edge_list, 1).T
     Network.connectivity = connectivity
     Network.TimeVector = simulationOptions.TimeVector
     return Network
@@ -316,6 +315,26 @@ def defaultSimulation(Connectivity, junctionMode = 'binary', collapse = False,
             print('Unfortunately, no current path is formed in simulation time.')
 
     return this_realization
+
+def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
+    import wires
+    wires_dict = wires.generate_wires_distribution(number_of_wires = numOfWires,
+                                            wire_av_length = mean_length,
+                                            wire_dispersion = 20,
+                                            gennorm_shape = 3,
+                                            centroid_dispersion = dispersion,
+                                            Lx = 5e2,
+                                            Ly = 5e2,
+                                            this_seed = this_seed)
+
+    wires_dict = wires.detect_junctions(wires_dict)
+    wires_dict = wires.generate_graph(wires_dict)
+    if wires.check_connectedness(wires_dict):
+        return wires_dict
+    elif iterations < max_iters: 
+        generate_network(numOfWires, dispersion, mean_length, this_seed+1, iterations+1, max_iters)
+    else:
+        return None
 
 def findJunctionIndex(connectivity, wire1, wire2):
     edgeList = connectivity.edge_list
