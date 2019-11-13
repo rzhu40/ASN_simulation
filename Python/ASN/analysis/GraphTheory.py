@@ -3,19 +3,26 @@ import networkx as nx
 from itertools import islice
 
 # def generateGrid()
-def getOnGraph(network, this_TimeStamp = 0):
-    edgeList = network.connectivity.edge_list
-    source = network.sources[0]
-    drain = network.drains[0]
-    onGraph = nx.DiGraph()
-    onGraph.add_nodes_from(range(network.numOfWires))
-    junctionCurrent = network.junctionVoltage[this_TimeStamp,:]/network.junctionResistance[this_TimeStamp,:]
-    this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
-    for i in range(network.numOfJunctions):
-        if this_direction[i] == 1:
-            onGraph.add_edge(edgeList[i,0], edgeList[i,1])
-        elif this_direction[i] == -1:
-            onGraph.add_edge(edgeList[i,1], edgeList[i,0])
+def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
+    if isDirected:
+        edgeList = network.connectivity.edge_list
+        source = network.sources[0]
+        drain = network.drains[0]
+        onGraph = nx.DiGraph()
+        onGraph.add_nodes_from(range(network.numOfWires))
+        junctionCurrent = network.junctionVoltage[this_TimeStamp,:]/network.junctionResistance[this_TimeStamp,:]
+        this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
+        for i in range(network.numOfJunctions):
+            if this_direction[i] == 1:
+                onGraph.add_edge(edgeList[i,0], edgeList[i,1])
+            elif this_direction[i] == -1:
+                onGraph.add_edge(edgeList[i,1], edgeList[i,0])
+    else:
+        edgeList = network.connectivity.edge_list
+        adjMat = np.zeros((network.numOfWires, network.numOfWires))
+        adjMat[edgeList[:,0], edgeList[:,1]] = network.junctionSwitch[this_TimeStamp,:]
+        adjMat[edgeList[:,1], edgeList[:,0]] = network.junctionSwitch[this_TimeStamp,:]
+        onGraph = nx.from_numpy_array(adjMat)
     return onGraph
 
 def findCurrent(network, numToFind = 1):

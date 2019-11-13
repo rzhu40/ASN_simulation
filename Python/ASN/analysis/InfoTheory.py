@@ -23,7 +23,7 @@ def readFloatsFile(filename):
 
 def calc_AIS(data, k = 1, tau = 1, 
             calculator='kraskov', calc_type='average'):
-    jarLocation = r"C:\Users\rzhu\Documents\PhD\JIDT\infodynamics.jar"
+    jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
     if not isJVMStarted():
         startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
     
@@ -60,7 +60,7 @@ def calc_TE(source, destination, auto_embed = True,
             k_hist = 1, k_tau = 1, l_hist = 1, l_tau = 1,
             calculator='kraskov', calc_type='average'):
 
-    jarLocation = r"C:\Users\rzhu\Documents\PhD\JIDT\infodynamics.jar"
+    jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
     if not isJVMStarted():
         startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
 
@@ -118,10 +118,7 @@ def calc_networkTE(Network, average = False, samples_per_sec = 10,average_mode =
             wire1, wire2 = edgeList[i,:]
         else:
             wire2, wire1 = edgeList[i,:]
-        try:
-            TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
-        except:
-            continue
+        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
         #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
     
     Network.TE = TE
@@ -133,3 +130,26 @@ def calc_networkTE(Network, average = False, samples_per_sec = 10,average_mode =
             return np.mean(TE, axis = 1)
     else:
         return TE
+
+def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10):
+    dt_euler = Network.TimeVector[1] - Network.TimeVector[0]
+    sample_start = int(t_start/dt_euler)
+    sample_end = sample_start + int(N*dt_sampling/dt_euler)
+    sampling = np.arange(sample_start, sample_end, int(this_dt/dt_euler))
+    if sampling[-1] > Network.TimeVector.size:
+        return None
+    
+    wireVoltage = Network.wireVoltage
+    E = Network.numOfJunctions
+    TE = np.zeros((sampling.size, E))
+    edgeList = Network.connectivity.edge_list
+    mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
+    for i in tqdm(range(len(edgeList)), desc = 'Calculating TE '):
+        if mean_direction[i] >= 0:
+            wire1, wire2 = edgeList[i,:]
+        else:
+            wire2, wire1 = edgeList[i,:]
+        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
+        #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+    
+    return TE
