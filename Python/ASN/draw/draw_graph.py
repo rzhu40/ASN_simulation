@@ -33,7 +33,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         this_TimeStamp = 0
         real_TimeStamp = 0
     
-    G = network.graph
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
     pos = nx.layout.kamada_kawai_layout(G)   
     edgeList = network.connectivity.edge_list
     sources = network.sources

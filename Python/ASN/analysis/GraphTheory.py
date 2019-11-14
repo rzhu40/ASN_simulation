@@ -10,7 +10,7 @@ def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
         drain = network.drains[0]
         onGraph = nx.DiGraph()
         onGraph.add_nodes_from(range(network.numOfWires))
-        junctionCurrent = network.junctionVoltage[this_TimeStamp,:]/network.junctionResistance[this_TimeStamp,:]
+        junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
         this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
         for i in range(network.numOfJunctions):
             if this_direction[i] == 1:
@@ -35,7 +35,7 @@ def findCurrent(network, numToFind = 1):
     onGraph = getOnGraph(network, 0)
     last_direction = np.zeros(network.numOfJunctions)
     for this_time in range(1,network.TimeVector.size):
-        this_direction = np.sign(network.junctionVoltage[this_time,:]/network.junctionResistance[this_time,:]*network.junctionSwitch[this_time,:])
+        this_direction = np.sign(network.junctionVoltage[this_time,:]*network.junctionConductance[this_time,:]*network.junctionSwitch[this_time,:])
         flag = this_direction == last_direction
         changed_pos = np.where(flag == False)[0]
         if changed_pos.size == 0:

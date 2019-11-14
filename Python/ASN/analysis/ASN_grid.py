@@ -98,7 +98,7 @@ def getRNMSE(predict, real):
 
 def forecast(simulationOptions, connectivity, junctionState, 
             training_ratio = 0.5, steps = 1,
-            measure_type = 'conductance',
+            measure_type = 'voltage',
             pre_activate = False, past_signal = True,
             forecast_on = False, 
             cheat_on = False, cheat_period = 75, cheat_steps = 25,
@@ -122,7 +122,7 @@ def forecast(simulationOptions, connectivity, junctionState,
     Network = dataStruct.network__()
     Network.filamentState = np.zeros((niterations, E))
     Network.junctionVoltage = np.zeros((niterations, E))
-    Network.junctionResistance = np.zeros((niterations, E))
+    Network.junctionConductance = np.zeros((niterations, E))
     Network.junctionSwitch = np.zeros((niterations, E), dtype = bool)
     Network.wireVoltage = np.zeros((niterations, V))
     Network.electrodeCurrent = np.zeros((niterations, numOfElectrodes))
@@ -141,8 +141,8 @@ def forecast(simulationOptions, connectivity, junctionState,
         pre = pre_activation(simulationOptions, connectivity, junctionState)
 
     for this_time in tqdm(range(training_length), desc='Training weight vector '):
-        junctionState.updateResistance()
-        junctionConductance = 1/junctionState.resistance
+        junctionState.updateConductance()
+        junctionConductance = junctionState.conductance
         
         Gmat = np.zeros((V,V))
         Gmat[edgeList[:,0], edgeList[:,1]] = junctionConductance
@@ -166,7 +166,7 @@ def forecast(simulationOptions, connectivity, junctionState,
         Network.electrodeCurrent[this_time,:] = sol[V:]
         Network.filamentState[this_time,:] = junctionState.filamentState
         Network.junctionVoltage[this_time,:] = junctionState.voltage
-        Network.junctionResistance[this_time,:] = junctionState.resistance
+        Network.junctionConductance[this_time,:] = junctionState.conductance
         Network.junctionSwitch[this_time,:] = junctionState.OnOrOff
     
     # junctionList = np.where(connectivity.adj_matrix[Network.drains[0],:] == 1)[0]
@@ -176,11 +176,11 @@ def forecast(simulationOptions, connectivity, junctionState,
 
     if measure_type == 'conductance':
         stimulus_packer = np.array([simulationOptions.stimulus[0].signal[:training_length]]*len(junctionList)).T
-        measure = Network.junctionVoltage[:training_length,junctionList]/Network.junctionResistance[:training_length,junctionList]/stimulus_packer
+        measure = Network.junctionVoltage[:training_length,junctionList]*Network.junctionConductance[:training_length,junctionList]/stimulus_packer
     elif measure_type == 'filament':
         measure = Network.filamentState[:training_length,junctionList]
     elif measure_type == 'current':
-        measure = Network.junctionVoltage[:training_length,junctionList]/Network.junctionResistance[:training_length,junctionList]
+        measure = Network.junctionVoltage[:training_length,junctionList]*Network.junctionConductance[:training_length,junctionList]
     elif measure_type == 'voltage':
         measure = Network.wireVoltage[:training_length,outList]
 
@@ -190,8 +190,8 @@ def forecast(simulationOptions, connectivity, junctionState,
     cheat_index = []
     update_index = []
     for this_time in tqdm(range(training_length, niterations), desc='Forecasting '):
-        junctionState.updateResistance()
-        junctionConductance = 1/junctionState.resistance
+        junctionState.updateConductance()
+        junctionConductance = junctionState.conductance
         
         Gmat = np.zeros((V,V))
         Gmat[edgeList[:,0], edgeList[:,1]] = junctionConductance
@@ -232,15 +232,15 @@ def forecast(simulationOptions, connectivity, junctionState,
         Network.electrodeCurrent[this_time,:] = sol[V:]
         Network.filamentState[this_time,:] = junctionState.filamentState
         Network.junctionVoltage[this_time,:] = junctionState.voltage
-        Network.junctionResistance[this_time,:] = junctionState.resistance
+        Network.junctionConductance[this_time,:] = junctionState.conductance
         Network.junctionSwitch[this_time,:] = junctionState.OnOrOff
 
         if measure_type == 'conductance':
-            this_measure = Network.junctionVoltage[this_time,junctionList]/Network.junctionResistance[this_time,junctionList]/predict[this_time]
+            this_measure = Network.junctionVoltage[this_time,junctionList]/Network.junctionConductance[this_time,junctionList]/predict[this_time]
         elif measure_type == 'filament':
             this_measure = Network.filamentState[this_time,junctionList]
         elif measure_type == 'current':
-            this_measure = Network.junctionVoltage[this_time,junctionList]/Network.junctionResistance[this_time,junctionList]
+            this_measure = Network.junctionVoltage[this_time,junctionList]/Network.junctionConductance[this_time,junctionList]
         elif measure_type == 'voltage':
             this_measure = Network.wireVoltage[this_time,outList]
         measure = np.vstack((measure, this_measure))
@@ -295,12 +295,12 @@ def plotForecastPanel(Network):
 
     ax = fig.add_subplot(gs[1, 2])
     for i in Network.junctionList:
-        plt.plot(Network.junctionVoltage[:,i]/Network.junctionResistance[:,i])
+        plt.plot(Network.junctionVoltage[:,i]*Network.junctionConductance[:,i])
     ax.set_title('current')
 
     ax = fig.add_subplot(gs[1, 3])
     for i in Network.junctionList:
-        plt.plot(Network.junctionVoltage[:,i]/Network.junctionResistance[:,i]/Network.forecast)
+        plt.plot(Network.junctionVoltage[:,i]*Network.junctionConductance[:,i]/Network.forecast)
     ax.set_title('conductance')
 
     ax = fig.add_subplot(gs[1, 4])

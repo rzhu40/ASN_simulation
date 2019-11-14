@@ -59,9 +59,9 @@ class junctionState__:
         self.mode = mode
         self.collapse = collapse
         self.voltage = np.zeros(numOfJunctions)
-        self.conductance = np.zeros(numOfJunctions)
-        self.onConductance = np.ones(numOfJunctions)/onResistance
-        self.offConductance = np.ones(numOfJunctions)/offResistance
+        self.resistance = np.zeros(numOfJunctions)
+        self.onResistance = np.ones(numOfJunctions)*onResistance
+        self.offResistance = np.ones(numOfJunctions)*offResistance
 
         self.filamentState = np.zeros(numOfJunctions)
         self.OnOrOff = np.full(numOfJunctions, False, dtype=bool)
@@ -70,11 +70,11 @@ class junctionState__:
         self.critialFlux = criticalFlux
         self.maxFlux = maxFlux
 
-    def updateConductance(self):
+    def updateResistance(self):
         self.OnOrOff = abs(self.filamentState) >= self.critialFlux
         if self.mode == 'binary':
-            self.conductance = self.offConductance + \
-                            (self.onConductance-self.offConductance)*self.OnOrOff
+            self.resistance = self.offResistance + \
+                            (self.onResistance-self.offResistance)*self.OnOrOff
                             
         elif self.mode == 'tunneling':
             phi = 0.81
@@ -84,7 +84,7 @@ class junctionState__:
             d = (0.1 - abs(self.filamentState))*50
             d[d<0] = 0 
             tun = 2/A * d**2 / phi**0.5 * np.exp(C0*phi**2 * d)/J1
-            self.conductance = 1/(tun + 1/self.onConductance[0]) + self.offConductance[0]
+            self.resistance = 1/(1/(tun + self.onResistance[0]) + 1/self.offResistance[0])
 
     def updateJunctionState(self, dt):
         # last_sign = np.sign(self.filamentState)
@@ -210,8 +210,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     else:        
         Network.filamentState = np.zeros((niterations, E))
         Network.junctionVoltage = np.zeros((niterations, E))
-        # Network.junctionResistance = np.zeros((niterations, E))
-        Network.junctionConductance = np.zeros((niterations, E))
+        Network.junctionResistance = np.zeros((niterations, E))
         Network.junctionSwitch = np.zeros((niterations, E), dtype = bool)
         Network.wireVoltage = np.zeros((niterations, V))
         Network.electrodeCurrent = np.zeros((niterations, numOfElectrodes))
@@ -227,8 +226,8 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         Network.drains.append(electrodes[1])
 
     for this_time in tqdm(range(niterations), desc='Running Simulation ', disable = disable_tqdm):
-        junctionState.updateConductance()
-        junctionConductance = junctionState.conductance
+        junctionState.updateResistance()
+        junctionConductance = 1/junctionState.resistance
         
         Gmat = np.zeros((V,V))
         Gmat[edgeList[:,0], edgeList[:,1]] = junctionConductance
@@ -264,12 +263,11 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
             Network.electrodeCurrent[this_time,:] = sol[V:]
             Network.filamentState[this_time,:] = junctionState.filamentState
             Network.junctionVoltage[this_time,:] = junctionState.voltage
-            Network.junctionConductance[this_time,:] = junctionState.conductance
+            Network.junctionResistance[this_time,:] = junctionState.resistance
             Network.junctionSwitch[this_time,:] = junctionState.OnOrOff
 
     Network.numOfWires = V
     Network.numOfJunctions = E
-    Network.junctionResistance = 1/Network.junctionConductance
     # Network.adjMat = connectivity.adj_matrix
     # Network.graph = nx.from_numpy_array(connectivity.adj_matrix)
     # if nx.has_path(Network.graph, Network.sources[0], Network.drains[0]):
