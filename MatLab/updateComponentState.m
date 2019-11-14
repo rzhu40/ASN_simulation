@@ -53,6 +53,6 @@ function updateComponentState(compPtr, dt)
             
             % Filaments that have just disconnected suffer a blow:
             justClosed = wasOpen & (abs(compPtr.comp.filamentState) < compPtr.comp.criticalFlux);
-            compPtr.comp.filamentState(justClosed) = compPtr.comp.filamentState(justClosed) / 10;
+%             compPtr.comp.filamentState(justClosed) = compPtr.comp.filamentState(justClosed) / 10;
     end
 end
