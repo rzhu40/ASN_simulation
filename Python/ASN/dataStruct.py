@@ -22,8 +22,7 @@ class network__:
     def allocateData(self):
         print('Allocating data to obejcts....')
         self.gridSize = [self.connectivity.length_x, self.connectivity.length_y]
-        self.junctionCurrent = self.junctionVoltage/self.junctionResistance
-        # self.networkConductance = 1/self.networkResistance        
+        self.junctionCurrent = self.junctionVoltage*self.junctionConductance 
         self.isOnCurrentPath()
         # self.getWireVoltage()
 
@@ -104,12 +103,11 @@ class junction__:
         self.position = np.array([network.connectivity.xi[index], network.connectivity.yi[index]])
         self.filamentState = network.filamentState[:,index]
         self.switch = network.junctionSwitch[:,index]
-        self.resistance = network.junctionResistance[:,index]
+        self.conductance = network.junctionConductance[:,index]
         self.voltage = network.junctionVoltage[:,index]
         self.current = network.junctionCurrent[:,index]
         self.contactWires = network.connectivity.edge_list[index,:]
         self.onCurrentPath = network.onCurrentPath[:,index]
-        self.conductance = 1/self.resistance
         
         # self.Node1Voltage = network.nodeVoltage[:,self.ContactNodes[0]-1]
         # self.Node2Voltage = network.nodeVoltage[:,self.ContactNodes[1]-1]
