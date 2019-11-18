@@ -269,7 +269,6 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
     Network.numOfWires = V
     Network.numOfJunctions = E
-    Network.junctionResistance = 1/Network.junctionConductance
     # Network.adjMat = connectivity.adj_matrix
     # Network.graph = nx.from_numpy_array(connectivity.adj_matrix)
     # if nx.has_path(Network.graph, Network.sources[0], Network.drains[0]):
@@ -281,6 +280,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
     Network.connectivity = connectivity
     if not lite_mode:
+        Network.junctionResistance = 1/Network.junctionConductance
         Network.TimeVector = simulationOptions.TimeVector
     return Network
     
