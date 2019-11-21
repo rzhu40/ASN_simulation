@@ -1,0 +1,12 @@
+#!/bin/csh 
+#PBS -q physics 
+#PBS -l walltime=1:00:00 
+#PBS -l nodes=1:ppn=4 
+#PBS -V 
+#PBS -N test-python_multi 
+#PBS -m ea 
+#PBS -M aloe8475@sydney.edu.au 
+#PBS -j oe 
+#PBS -o output.txt 
+cd ${headnode2/aloe8475/ruru/ASN/} 
+# run python runSimulation.py

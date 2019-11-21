@@ -2,7 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from jpype import *
 from tqdm import tqdm
+from utils import istarmap
 import warnings
+import os
+from pathlib import Path
+from multiprocessing import Pool
 warnings.filterwarnings("ignore",category=UserWarning)
 
 def readFloatsFile(filename):
@@ -23,7 +27,12 @@ def readFloatsFile(filename):
 
 def calc_AIS(data, k = 1, tau = 1, 
             calculator='kraskov', calc_type='average'):
-    jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
+
+    file_path = Path(os.path.dirname(os.path.realpath(__file__)))
+    root = file_path.parent
+    jarLocation = os.path.join(root, 'JIDT', 'infodynamics.jar')
+
+    # jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
     if not isJVMStarted():
         startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
     
@@ -60,7 +69,11 @@ def calc_TE(source, destination, auto_embed = True,
             k_hist = 1, k_tau = 1, l_hist = 1, l_tau = 1,
             calculator='kraskov', calc_type='average'):
 
-    jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
+    file_path = Path(os.path.dirname(os.path.realpath(__file__)))
+    root = file_path.parent
+    jarLocation = os.path.join(root, 'JIDT', 'infodynamics.jar')
+
+    # jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
     if not isJVMStarted():
         startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
 
@@ -131,11 +144,12 @@ def calc_networkTE(Network, average = False, samples_per_sec = 10,average_mode =
     else:
         return TE
 
-def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10):
+def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', 
+                 return_sampling = False, disable_tqdm = False):
     dt_euler = Network.TimeVector[1] - Network.TimeVector[0]
     sample_start = int(t_start/dt_euler)
     sample_end = sample_start + int(N*dt_sampling/dt_euler)
-    sampling = np.arange(sample_start, sample_end, int(this_dt/dt_euler))
+    sampling = np.arange(sample_start, sample_end, int(dt_sampling/dt_euler))
     if sampling[-1] > Network.TimeVector.size:
         return None
     
@@ -144,12 +158,39 @@ def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10):
     TE = np.zeros((sampling.size, E))
     edgeList = Network.connectivity.edge_list
     mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
-    for i in tqdm(range(len(edgeList)), desc = 'Calculating TE '):
+    for i in tqdm(range(len(edgeList)), desc = 'Calculating TE ', disable = disable_tqdm):
         if mean_direction[i] >= 0:
             wire1, wire2 = edgeList[i,:]
         else:
             wire2, wire1 = edgeList[i,:]
-        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
-        #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = calculator, calc_type = 'local')
+#         TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+    if return_sampling:
+        return TE, sampling
+    else:
+        return TE
+
+def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False):
+    dt_euler = Network.TimeVector[1] - Network.TimeVector[0]
+    sample_start = int(t_start/dt_euler)
+    sample_end = sample_start + int(N*dt_sampling/dt_euler)
+    sampling = np.arange(sample_start, sample_end, int(dt_sampling/dt_euler))
+    if sampling[-1] > Network.TimeVector.size:
+        return None
     
-    return TE
+    wireVoltage = Network.wireVoltage
+    E = Network.numOfJunctions
+    TE = np.zeros((sampling.size, E))
+    edgeList = Network.connectivity.edge_list
+    mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
+    calcList = []
+    for i in range(len(edgeList)):
+        if mean_direction[i] >= 0:
+            wire1, wire2 = edgeList[i,:]
+        else:
+            wire2, wire1 = edgeList[i,:]
+        calcList.append([wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], True, 1,1,1,1, calculator, 'local'])
+
+    with Pool(processes=4) as pool:    
+        result = list(tqdm(pool.istarmap(calc_TE, calcList), total = 261, desc = f'Calculating TE with {pool._processes} processors.'))
+    return np.array(result).T

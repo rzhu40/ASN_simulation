@@ -1,3 +1,5 @@
+#import os
+#os.chdir('D:/ASN/')
 import numpy as np
 import matplotlib.pyplot as plt
 from jpype import *
@@ -8,6 +10,7 @@ from analysis.InfoTheory import calc_TE, calc_networkTE
 from analysis.mkg import mkg_generator
 from draw.draw_graph import draw_graph
 import pickle
+from tqdm import tqdm
 plt.style.use('classic')
 
 def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False):
@@ -28,8 +31,7 @@ def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 
             wire1, wire2 = edgeList[i,:]
         else:
             wire2, wire1 = edgeList[i,:]
-        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = calculator, calc_type = 'local')
-#         TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
+        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'kraskov', calc_type = 'local')
     if return_sampling:
         return TE, sampling
     else:
@@ -45,11 +47,11 @@ if __name__ == '__main__':
                             junctionMode = 'binary', findFirst = False)
 
     dt_sample1 = [1e-3, 2e-3, 4e-3, 5e-3, 1e-2, 2e-2, 4e-2, 5e-2]
-    # dt_sample1 = [1e-3, 2e-3]
+#    dt_sample1 = [1e-3, 2e-3]
     dt_sample2 = [1e-1, 2e-1, 4e-1]
 
     sim2 = network__()
-    sim2.TimeVector = np.arange(0, 20010, 0.001)
+    sim2.TimeVector = np.arange(0, 20010, 0.1)
     sim2.numOfJunctions = 261
     sim2.connectivity = sim1.connectivity
 
@@ -62,10 +64,16 @@ if __name__ == '__main__':
     TE20000 = []
     TE40000 = []
 
-    for i, this_dt in enumerate(dt_sample1):
+    for i in tqdm(range(len(dt_sample1))):
+        this_dt = dt_sample1[i]
         TE20000.append(calc_network(sim1, this_dt, N = 20000, t_start = 10, calculator = 'kraskov'))
+        TE40000.append(calc_network(sim1, this_dt, N = 40000, t_start = 10, calculator = 'kraskov'))
+    print('1')
+    for i in tqdm(range(len(dt_sample2))):
+        this_dt = dt_sample2[i]
+        TE20000.append(calc_network(sim2, this_dt, N = 20000, t_start = 10, calculator = 'kraskov'))
         TE40000.append(calc_network(sim2, this_dt, N = 40000, t_start = 10, calculator = 'kraskov'))
-    
+    print('2')
     with open('data/TE_N20000.pkl', 'wb') as handle:
         pickle.dump(TE20000, handle, protocol = pickle.HIGHEST_PROTOCOL)
 

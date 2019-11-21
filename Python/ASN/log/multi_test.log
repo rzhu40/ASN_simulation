@@ -1,0 +1,31 @@
+2019-11-20 13:49:37,562:INFO:4 cores are being used.
+2019-11-20 13:49:37,566:INFO:starting simulation.
+2019-11-20 13:49:40,814:INFO:20simulations runs for 3.247248649597168 seconds.
+2019-11-20 14:54:01,633:INFO:Simulation Finished, starting multi-calculating with 4 cores
+2019-11-20 14:54:04,586:INFO:multi finished, starting series calculation
+2019-11-20 14:54:07,953:INFO:series finished.
+2019-11-20 15:15:47,166:INFO:4 cores are being used.
+2019-11-20 15:15:47,174:INFO:starting simulation.
+2019-11-20 15:15:49,799:INFO:20simulations runs for 2.625093936920166 seconds.
+2019-11-21 19:24:38,762:INFO:4 cores are being used.
+2019-11-21 19:24:38,767:INFO:starting simulation.
+2019-11-21 19:24:42,312:INFO:20 simulations runs for 3.5436930656433105 seconds.
+2019-11-21 19:24:58,702:INFO:4 cores are being used.
+2019-11-21 19:24:58,706:INFO:starting simulation.
+2019-11-21 19:25:01,345:INFO:20 simulations runs for 2.637533187866211 seconds.
+2019-11-21 19:25:12,693:INFO:4 cores are being used.
+2019-11-21 19:25:12,698:INFO:starting simulation.
+2019-11-21 19:25:14,980:INFO:20 simulations runs for 2.282413959503174 seconds.
+2019-11-21 22:42:56,969:INFO:4 cores are being used.
+2019-11-21 22:42:56,973:INFO:starting simulation.
+2019-11-21 22:43:27,620:INFO:4 cores are being used.
+2019-11-21 22:43:27,624:INFO:starting simulation.
+2019-11-21 22:45:05,172:INFO:4 cores are being used.
+2019-11-21 22:45:05,178:INFO:starting simulation.
+2019-11-21 22:46:42,059:INFO:4 cores are being used.
+2019-11-21 22:46:42,062:INFO:starting simulation.
+2019-11-21 22:50:45,611:INFO:4 cores are being used.
+2019-11-21 22:50:45,613:INFO:starting simulation.
+2019-11-21 23:06:46,110:INFO:4 cores are being used.
+2019-11-21 23:06:46,112:INFO:starting simulation.
+2019-11-21 23:06:59,996:INFO:200 simulations runs for 13.88437271118164 seconds.

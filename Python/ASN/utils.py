@@ -283,16 +283,6 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         Network.junctionResistance = 1/Network.junctionConductance
         Network.TimeVector = simulationOptions.TimeVector
     return Network
-    
-def inputPacker(Connectivity, 
-                contactMode='farthest', electrodes=None,
-                dt= 1e-3, T=10, 
-                biasType = 'DC',
-                onTime=0, offTime=5,
-                onAmp=1.1, offAmp=0.005,
-                f = 1):
-    packer = [Connectivity, contactMode, electrodes, dt, T, biasType, onTime, offTime, onAmp, offAmp, f]
-    return packer
 
 def defaultSimulation(Connectivity, 
                     junctionMode = 'binary', collapse = False,
@@ -375,6 +365,33 @@ def is_notebook():
             return False  # Other type (?)
     except NameError:
         return False      # Probably standard Python interpreter
+
+import multiprocessing.pool as mpp
+def istarmap(self, func, iterable, chunksize=1):
+    """
+    starmap-version of imap
+    """
+    
+    if self._state != mpp.RUN:
+        raise ValueError("Pool not running")
+
+    if chunksize < 1:
+        raise ValueError(
+            "Chunksize must be 1+, not {0:n}".format(
+                chunksize))
+
+    task_batches = mpp.Pool._get_tasks(func, iterable, chunksize)
+    result = mpp.IMapIterator(self._cache)
+    self._taskqueue.put(
+        (
+            self._guarded_task_generation(result._job,
+                                          mpp.starmapstar,
+                                          task_batches),
+            result._set_length
+        ))
+    return (item for chunk in result for item in chunk)
+
+mpp.Pool.istarmap = istarmap
 
 def check_memory():
     import os

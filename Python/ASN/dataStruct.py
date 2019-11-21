@@ -3,7 +3,7 @@ import networkx as nx
 
 from tqdm import tqdm
 from copy import deepcopy
-from draw.draw_plotly import draw_plotly
+# from draw.draw_plotly import draw_plotly
 
 class network__:
     pass
@@ -63,39 +63,39 @@ class network__:
                     if (self.junctionSwitch[this_time,i])&(edgeList[i,0] in component)&(edgeList[i,1] in component):
                         self.onCurrentPath[this_time,i] = True
 
-    def draw(self, **kwargs):
-        if not hasattr(self, 'Junctions'):
-            self.allocateData()
+    # def draw(self, **kwargs):
+    #     if not hasattr(self, 'Junctions'):
+    #         self.allocateData()
             
-        Lx, Ly = self.gridSize
+    #     Lx, Ly = self.gridSize
 
-        if 'TimeStamp' in kwargs:
-            this_TimeStamp = kwargs['TimeStamp']
-        elif 'time' in kwargs:
-            if kwargs['time'] in self.TimeVector:
-                this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
-            elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
-                print('Input time exceeds simulation period.')
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-            else:
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-        else:
-            this_TimeStamp = 0
+    #     if 'TimeStamp' in kwargs:
+    #         this_TimeStamp = kwargs['TimeStamp']
+    #     elif 'time' in kwargs:
+    #         if kwargs['time'] in self.TimeVector:
+    #             this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
+    #         elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
+    #             print('Input time exceeds simulation period.')
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #         else:
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #     else:
+    #         this_TimeStamp = 0
 
-        if 'JunctionsToObserve' in kwargs:
-            JunctionsToObserve = kwargs['JunctionsToObserve']
-        else:
-            JunctionsToObserve = []
+    #     if 'JunctionsToObserve' in kwargs:
+    #         JunctionsToObserve = kwargs['JunctionsToObserve']
+    #     else:
+    #         JunctionsToObserve = []
 
-        if 'PathHighlight' in kwargs:
-            PathHighlight = kwargs['PathHighlight']
-        else:
-            PathHighlight = None
+    #     if 'PathHighlight' in kwargs:
+    #         PathHighlight = kwargs['PathHighlight']
+    #     else:
+    #         PathHighlight = None
         
-        fig = draw_plotly(self, PathHighlight = PathHighlight, 
-                        JunctionsToObserve = JunctionsToObserve, 
-                        TimeStamp = this_TimeStamp)
-        return fig
+    #     fig = draw_plotly(self, PathHighlight = PathHighlight, 
+    #                     JunctionsToObserve = JunctionsToObserve, 
+    #                     TimeStamp = this_TimeStamp)
+    #     return fig
 
 class junction__:
     def __init__(self, network, index):
@@ -230,36 +230,36 @@ class loop__:
         self.JunctionsInd = np.sort([self.Junctions[i].index for i in range(len(self.Junctions))]).astype(int)
         self.WiresInd = np.sort(self.onLoopWiresInd).astype(int)
     
-    def draw(self, **kwargs):
-        Lx, Ly = self.gridSize
+    # def draw(self, **kwargs):
+    #     Lx, Ly = self.gridSize
 
-        if 'TimeStamp' in kwargs:
-            this_TimeStamp = kwargs['TimeStamp']
-        elif 'time' in kwargs:
-            if kwargs['time'] in self.TimeVector:
-                this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
-            elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
-                print('Input time exceeds simulation period.')
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-            else:
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-        else:
-            this_TimeStamp = 0
+    #     if 'TimeStamp' in kwargs:
+    #         this_TimeStamp = kwargs['TimeStamp']
+    #     elif 'time' in kwargs:
+    #         if kwargs['time'] in self.TimeVector:
+    #             this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
+    #         elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
+    #             print('Input time exceeds simulation period.')
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #         else:
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #     else:
+    #         this_TimeStamp = 0
 
-        if 'JunctionsToObserve' in kwargs:
-            JunctionsToObserve = kwargs['JunctionsToObserve']
-        else:
-            JunctionsToObserve = []
+    #     if 'JunctionsToObserve' in kwargs:
+    #         JunctionsToObserve = kwargs['JunctionsToObserve']
+    #     else:
+    #         JunctionsToObserve = []
 
-        if 'PathHighlight' in kwargs:
-            PathHighlight = kwargs['PathHighlight']
-        else:
-            PathHighlight = []
+    #     if 'PathHighlight' in kwargs:
+    #         PathHighlight = kwargs['PathHighlight']
+    #     else:
+    #         PathHighlight = []
         
-        fig = draw.draw(self, PathHighlight = PathHighlight, 
-                        JunctionsToObserve = JunctionsToObserve, 
-                        TimeStamp = this_TimeStamp)
-        return fig
+    #     fig = draw.draw(self, PathHighlight = PathHighlight, 
+    #                     JunctionsToObserve = JunctionsToObserve, 
+    #                     TimeStamp = this_TimeStamp)
+    #     return fig
 
 class subnetwork_KVL__:
 
@@ -298,33 +298,33 @@ class subnetwork_KVL__:
         self.WiresInd = np.sort(self.WiresInd).astype(int)
         self.JunctionsInd = np.sort(self.JunctionsInd).astype(int)
 
-    def draw(self, **kwargs):
-        Lx, Ly = self.gridSize
+    # def draw(self, **kwargs):
+    #     Lx, Ly = self.gridSize
 
-        if 'TimeStamp' in kwargs:
-            this_TimeStamp = kwargs['TimeStamp']
-        elif 'time' in kwargs:
-            if kwargs['time'] in self.TimeVector:
-                this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
-            elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
-                print('Input time exceeds simulation period.')
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-            else:
-                this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
-        else:
-            this_TimeStamp = 0
+    #     if 'TimeStamp' in kwargs:
+    #         this_TimeStamp = kwargs['TimeStamp']
+    #     elif 'time' in kwargs:
+    #         if kwargs['time'] in self.TimeVector:
+    #             this_TimeStamp = np.where(self.TimeVector == kwargs['time'])[0][0]
+    #         elif (kwargs['time'] < min(self.TimeVector)) or (kwargs['time'] > max(self.TimeVector)):
+    #             print('Input time exceeds simulation period.')
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #         else:
+    #             this_TimeStamp = np.argmin(abs(self.TimeVector - kwargs['time']))
+    #     else:
+    #         this_TimeStamp = 0
 
-        if 'JunctionsToObserve' in kwargs:
-            JunctionsToObserve = kwargs['JunctionsToObserve']
-        else:
-            JunctionsToObserve = []
+    #     if 'JunctionsToObserve' in kwargs:
+    #         JunctionsToObserve = kwargs['JunctionsToObserve']
+    #     else:
+    #         JunctionsToObserve = []
 
-        if 'PathHighlight' in kwargs:
-            PathHighlight = kwargs['PathHighlight']
-        else:
-            PathHighlight = []
+    #     if 'PathHighlight' in kwargs:
+    #         PathHighlight = kwargs['PathHighlight']
+    #     else:
+    #         PathHighlight = []
         
-        fig = draw.draw(self, PathHighlight = PathHighlight, 
-                        JunctionsToObserve = JunctionsToObserve, 
-                        TimeStamp = this_TimeStamp)
-        return fig
+    #     fig = draw.draw(self, PathHighlight = PathHighlight, 
+    #                     JunctionsToObserve = JunctionsToObserve, 
+    #                     TimeStamp = this_TimeStamp)
+    #     return fig
