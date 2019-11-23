@@ -25,7 +25,8 @@ def readFloatsFile(filename):
 			array.append([float(x) for x in line.split()])
 		return array
 
-def calc_AIS(data, k = 1, tau = 1, 
+def calc_AIS(data, auto_embed = True,
+            k = 1, tau = 1, 
             calculator='kraskov', calc_type='average'):
 
     file_path = Path(os.path.dirname(os.path.realpath(__file__)))
@@ -39,17 +40,22 @@ def calc_AIS(data, k = 1, tau = 1,
     if calculator == 'kraskov':
         calcAISClass = JPackage("infodynamics.measures.continuous.kraskov").ActiveInfoStorageCalculatorKraskov
         calcAIS = calcAISClass()
-        calcAIS.setProperty("NOISE_LEVEL_TO_ADD", "0")
+        # calcAIS.setProperty("NOISE_LEVEL_TO_ADD", "0")
         # calcAIS.setProperty("NORM_TYPE", "EUCLIDEAN")
         calcAIS.setProperty("ALG_NUM", "1")
+
     elif calculator == 'gaussian':
         calcAISClass = JPackage("infodynamics.measures.continuous.gaussian").ActiveInfoStorageCalculatorGaussian
         calcAIS = calcAISClass()
     
-    calcAIS.setProperty("k_HISTORY", str(k))
-    calcAIS.setProperty("TAU", str(tau))
-    calcAIS.setProperty("AUTO_EMBED_K_SEARCH_MAX", "2")
-    calcAIS.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "2")
+    if auto_embed:
+        calcAIS.setProperty("AUTO_EMBED_METHOD", "MAX_CORR_AIS")
+        calcAIS.setProperty("AUTO_EMBED_K_SEARCH_MAX", "10")
+        calcAIS.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "3")
+    else:
+        calcAIS.setProperty("k_HISTORY", str(k))
+        calcAIS.setProperty("TAU", str(tau))
+    
     calcAIS.setProperty("BIAS_CORRECTION", "true")
 
 
@@ -93,7 +99,6 @@ def calc_TE(source, destination, auto_embed = True,
         calcTE.setProperty("AUTO_EMBED_TAU_SEARCH_MAX", "3")
         # print(calcTE.getProperty('k_HISTORY'))
         # print(calcTE.getProperty('k_TAU'))
-
     else:
         calcTE.setProperty("k_HISTORY", str(k_hist))
         calcTE.setProperty("k_TAU", str(k_tau))
@@ -111,38 +116,6 @@ def calc_TE(source, destination, auto_embed = True,
         print('Calculation Type not right')
         return None
     return TEvalue
-
-def calc_networkTE(Network, average = False, samples_per_sec = 10,average_mode = 'time'):
-    if not hasattr(Network, 'sampling'):
-        dt = Network.TimeVector[1] - Network.TimeVector[0]
-        sampling = np.arange(0,Network.TimeVector.size, int(1/dt/samples_per_sec))
-        sampling = sampling
-        Network.sampling = sampling
-    else:
-        sampling = Network.sampling
-        
-    wireVoltage = Network.wireVoltage
-    E = Network.numOfJunctions
-    TE = np.zeros((sampling.size, E))
-    edgeList = Network.connectivity.edge_list
-    mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
-    for i in tqdm(range(len(edgeList)), desc = 'Calculating TE '):
-        if mean_direction[i] >= 0:
-            wire1, wire2 = edgeList[i,:]
-        else:
-            wire2, wire1 = edgeList[i,:]
-        TE[:,i] = calc_TE(wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = 'gaussian', calc_type = 'local')
-        #     TE[:,i] = calc_TE(wireVoltage[sampling, wire2], wireVoltage[sampling, wire1], calculator = 'gaussian', calc_type = 'local')
-    
-    Network.TE = TE
-
-    if average:
-        if average_mode == 'time':
-            return np.mean(TE, axis = 0)
-        elif average_mode == 'junction':
-            return np.mean(TE, axis = 1)
-    else:
-        return TE
 
 def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', 
                  return_sampling = False, disable_tqdm = False):
@@ -169,12 +142,16 @@ def calc_network(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 
         return TE, sampling
     else:
         return TE
-
-def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False, disable_tqdm = False):
-    dt_euler = Network.TimeVector[1] - Network.TimeVector[0]
+        
+def getSampling(TimeVector, dt_sampling = 1e-1, N =1e3, t_start = 10):
+    dt_euler = TimeVector[1] - TimeVector[0]
     sample_start = int(t_start/dt_euler)
     sample_end = sample_start + int(N*dt_sampling/dt_euler)
     sampling = np.arange(sample_start, sample_end, int(dt_sampling/dt_euler))
+    return sampling
+
+def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False, disable_tqdm = False):
+    sampling = getSampling(Network.TimeVector, dt_sampling, N, t_start)
     if sampling[-1] > Network.TimeVector.size:
         print('Simulation length not enough for sampling.')
         return None
@@ -183,7 +160,8 @@ def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kra
     E = Network.numOfJunctions
     TE = np.zeros((sampling.size, E))
     edgeList = Network.connectivity.edge_list
-    mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
+    # mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
+    mean_direction = np.sign(np.mean(wireVoltage[-20:,edgeList[:,0]] - wireVoltage[-20:,edgeList[:,1]], axis=0))
     calcList = []
     for i in range(len(edgeList)):
         if mean_direction[i] >= 0:
@@ -194,4 +172,17 @@ def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kra
 
     with Pool(processes=4) as pool:    
         result = list(tqdm(pool.istarmap(calc_TE, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
+    return np.array(result).T
+
+def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', disable_tqdm = False):
+    sampling = getSampling(Network.TimeVector, dt_sampling, N, t_start)
+    if sampling[-1] > Network.TimeVector.size:
+        print('Simulation length not enough for sampling.')
+        return None
+    
+    wireVoltage = Network.wireVoltage
+    calcList = [inputPacker(calc_AIS, wireVoltage[sampling, i], calculator = calculator, calc_type='local') for i in range(Network.numOfWires)]
+
+    with Pool(processes=4) as pool:    
+        result = list(tqdm(pool.istarmap(calc_AIS, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
     return np.array(result).T
