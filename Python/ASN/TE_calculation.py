@@ -68,12 +68,12 @@ if __name__ == '__main__':
         this_dt = dt_sample1[i]
         TE20000.append(calc_network(sim1, this_dt, N = 20000, t_start = 10, calculator = 'kraskov'))
         TE40000.append(calc_network(sim1, this_dt, N = 40000, t_start = 10, calculator = 'kraskov'))
-    print('1')
+    
     for i in tqdm(range(len(dt_sample2))):
         this_dt = dt_sample2[i]
         TE20000.append(calc_network(sim2, this_dt, N = 20000, t_start = 10, calculator = 'kraskov'))
         TE40000.append(calc_network(sim2, this_dt, N = 40000, t_start = 10, calculator = 'kraskov'))
-    print('2')
+    
     with open('data/TE_N20000.pkl', 'wb') as handle:
         pickle.dump(TE20000, handle, protocol = pickle.HIGHEST_PROTOCOL)
 
