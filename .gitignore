@@ -1,4 +1,4 @@
-
+*.log
 *.mat
 *.pkl
 *.code-workspace

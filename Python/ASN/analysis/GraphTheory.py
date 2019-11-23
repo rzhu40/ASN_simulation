@@ -26,7 +26,6 @@ def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
     return onGraph
 
 def findCurrent(network, numToFind = 1):
-    edgeList = network.connectivity.edge_list
     source = network.sources[0]
     drain = network.drains[0]
     numFound = 0
@@ -62,6 +61,18 @@ def findCurrent(network, numToFind = 1):
     # if numFound == 0:
     #     return None
     return PathList, foundTime
+
+def getSubGraphComm(network, this_TimeStamp = 0):
+    onGraph = getOnGraph(network, this_TimeStamp, False)
+    components = [i for i in nx.connected_components(onGraph)]
+    giant_component = components[np.argmax([len(i) for i in nx.connected_components(onGraph)])]
+    nodes = list(giant_component)
+    commMat = np.zeros((network.numOfWires, network.numOfWires))
+    subComm = nx.communicability(onGraph.subgraph(giant_component))
+    for i in nodes:
+        for j in nodes:
+            commMat[i,j] = subComm[i][j]
+    return commMat
 
 def wireDistanceToSource(network):
     V = network.numOfWires

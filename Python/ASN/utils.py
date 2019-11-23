@@ -170,6 +170,19 @@ def get_farthest_pairing(adjMat):
     farthest = np.array(np.where(distMat == np.max(distMat)))[:,1]
     return farthest
 
+def getCertainDistPairing(adjMat, dist = 4, numOfPairs = 1):
+    distMat = np.zeros(adjMat.shape)
+    G = nx.from_numpy_array(adjMat)
+    for i in range(adjMat[:,0].size):
+        for j in range(i+1, adjMat[:,0].size):
+            distMat[i,j] = nx.shortest_path_length(G, i, j)
+#     distMat = distMat + distMat.T
+    all_pairing = np.array(np.where(distMat == dist)).T
+    if len(all_pairing) >= numOfPairs:
+        return all_pairing[np.random.choice(len(all_pairing), numOfPairs, replace = False)]
+    else:
+        return all_pairing[np.random.choice(len(all_pairing), len(all_pairing), replace = False)]
+
 def get_boundary_pairing(connectivity, numOfPairs=5):
     centerX = connectivity.xc
     electrodes = np.zeros(2*numOfPairs)
@@ -181,9 +194,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
-    elif simulationOptions.contactMode == 'Alon':
-        simulationOptions.electrodes = get_boundary_pairing(connectivity, 28)
-
+        
     stimulusChecker = len(simulationOptions.electrodes) - len(simulationOptions.stimulus)
     if stimulusChecker > 0:
         for i in range(stimulusChecker):
@@ -279,17 +290,19 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
     Network.connectivity = connectivity
+    Network.conductance = Network.electrodeCurrent[:,1]/simulationOptions.stimulus[0].signal
     if not lite_mode:
         Network.junctionResistance = 1/Network.junctionConductance
         Network.TimeVector = simulationOptions.TimeVector
     return Network
 
 def defaultSimulation(Connectivity, 
-                    junctionMode = 'binary', collapse = False,
+                    junctionMode='binary', collapse=False,
+                    criticalFlux=1e-1, maxFlux=1.5e-1,
                     contactMode='farthest', electrodes=None,
-                    dt= 1e-3, T=10, 
+                    dt=1e-3, T=10, 
                     biasType = 'DC',
-                    onTime=0, offTime=5,
+                    onTime=0, offTime=50000000,
                     onAmp=1.1, offAmp=0.005,
                     f = 1, customSignal = None,
                     lite_mode = False, save_steps = 1,
@@ -305,10 +318,12 @@ def defaultSimulation(Connectivity,
                             TimeVector = SimulationOptions.TimeVector, 
                             onTime = onTime, offTime = offTime,
                             onAmp = onAmp, offAmp = offAmp,
-                            f= f, customSignal= customSignal)
+                            f = f, customSignal= customSignal)
     SimulationOptions.stimulus.append(tempStimulus)
 
-    JunctionState = junctionState__(Connectivity.numOfJunctions, mode = junctionMode, collapse = collapse)
+    JunctionState = junctionState__(Connectivity.numOfJunctions, 
+                                    mode = junctionMode, collapse = collapse, 
+                                    criticalFlux=criticalFlux, maxFlux = maxFlux)
 
     this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, lite_mode, disable_tqdm, save_steps)
     
@@ -322,6 +337,8 @@ def defaultSimulation(Connectivity,
             print('Unfortunately, no current path is formed in simulation time.')
 
     return this_realization
+
+runSimulation = defaultSimulation
 
 def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
     import wires
@@ -392,6 +409,15 @@ def istarmap(self, func, iterable, chunksize=1):
     return (item for chunk in result for item in chunk)
 
 mpp.Pool.istarmap = istarmap
+
+def inputPacker(func, *args, **kwargs):
+    import inspect
+    pack = []
+    varnames = list(inspect.getfullargspec(func))[0]
+    raw = inspect.getcallargs(func, *args, **kwargs)
+    for this_var in varnames:
+        pack.append(raw[this_var])
+    return pack
 
 def check_memory():
     import os

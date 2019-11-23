@@ -1,5 +1,7 @@
 *.ipynb
+*.log
 .ipynb_checkpoints/
 .vscode/
 __pycache__/
 ASN/JIDT/
+ASN/log
