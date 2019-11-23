@@ -194,7 +194,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
-        
+
     stimulusChecker = len(simulationOptions.electrodes) - len(simulationOptions.stimulus)
     if stimulusChecker > 0:
         for i in range(stimulusChecker):
@@ -217,6 +217,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     if lite_mode:
         Network.filamentState = np.zeros((int(niterations/save_steps), E))
         Network.wireVoltage = np.zeros((int(niterations/save_steps), V))
+        Network.electrodeCurrent = np.zeros((int(niterations/save_steps), numOfElectrodes))
         Network.TimeVector = np.zeros(int(niterations/save_steps))
     else:        
         Network.filamentState = np.zeros((niterations, E))
@@ -269,6 +270,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
             if this_time%save_steps == 0:
                 Network.wireVoltage[this_time//save_steps,:] = wireVoltage
                 Network.filamentState[this_time//save_steps,:] = junctionState.filamentState
+                Network.electrodeCurrent[this_time//save_steps,:] = sol[V:]
                 Network.TimeVector[this_time//save_steps] = simulationOptions.TimeVector[this_time]
         else:
             Network.wireVoltage[this_time,:] = wireVoltage
@@ -296,7 +298,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         Network.TimeVector = simulationOptions.TimeVector
     return Network
 
-def defaultSimulation(Connectivity, 
+def runSimulation(Connectivity, 
                     junctionMode='binary', collapse=False,
                     criticalFlux=1e-1, maxFlux=1.5e-1,
                     contactMode='farthest', electrodes=None,
@@ -338,7 +340,7 @@ def defaultSimulation(Connectivity,
 
     return this_realization
 
-runSimulation = defaultSimulation
+defaultSimulation = runSimulation
 
 def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
     import wires
@@ -424,3 +426,14 @@ def check_memory():
     import psutil
     process = psutil.Process(os.getpid())
     print(f'Current Memory usage is {process.memory_info().rss/1e6} MB.')
+
+def useMyRC():
+    import matplotlib as mpl
+    mpl.pyplot.style.use('classic')
+    mpl.pyplot.style.use('ggplot')
+    mpl.rcParams['lines.markersize'] = 8
+    mpl.rcParams['lines.linewidth'] = 1.5
+    mpl.rcParams['xtick.labelsize'] = 'medium'
+    mpl.rcParams['ytick.labelsize'] = 'medium'
+    mpl.rcParams['font.size'] = 16
+    
