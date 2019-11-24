@@ -150,14 +150,13 @@ def getSampling(TimeVector, dt_sampling = 1e-1, N =1e3, t_start = 10):
     sampling = np.arange(sample_start, sample_end, int(dt_sampling/dt_euler))
     return sampling
 
-def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False, disable_tqdm = False):
+def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', disable_tqdm = False):
     sampling = getSampling(Network.TimeVector, dt_sampling, N, t_start)
     if sampling[-1] > Network.TimeVector.size:
         print('Simulation length not enough for sampling.')
         return None
     
     wireVoltage = Network.wireVoltage
-    E = Network.numOfJunctions
     edgeList = Network.connectivity.edge_list
     # mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
     mean_direction = np.sign(np.mean(wireVoltage[-20:,edgeList[:,0]] - wireVoltage[-20:,edgeList[:,1]], axis=0))
