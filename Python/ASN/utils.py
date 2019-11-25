@@ -436,6 +436,11 @@ def useMyRC():
     mpl.rcParams['xtick.labelsize'] = 'medium'
     mpl.rcParams['ytick.labelsize'] = 'medium'
     mpl.rcParams['font.size'] = 16
+
+def useMyMP():
+    import multiprocessing  
+    mp = multiprocessing.get_context('spawn')
+    return mp
     
 def getEffectiveResistance(network, this_TimeStamp = 0, i = None, j = None):
     test = network.electrodes[:]
