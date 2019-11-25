@@ -161,22 +161,14 @@ class stimulus__:
             self.signal[offIndex] = offAmp
             
 def get_farthest_pairing(adjMat):
-    distMat = np.zeros(adjMat.shape)
     G = nx.from_numpy_array(adjMat)
-    for i in range(adjMat[:,0].size):
-        for j in range(i+1, adjMat[:,0].size):
-            distMat[i,j] = nx.shortest_path_length(G, i, j)
-    distMat = distMat + distMat.T
+    distMat = np.array(nx.floyd_warshall_numpy(G))
     farthest = np.array(np.where(distMat == np.max(distMat)))[:,1]
     return farthest
 
 def getCertainDistPairing(adjMat, dist = 4, numOfPairs = 1):
-    distMat = np.zeros(adjMat.shape)
     G = nx.from_numpy_array(adjMat)
-    for i in range(adjMat[:,0].size):
-        for j in range(i+1, adjMat[:,0].size):
-            distMat[i,j] = nx.shortest_path_length(G, i, j)
-#     distMat = distMat + distMat.T
+    distMat = np.array(nx.floyd_warshall_numpy(G))
     all_pairing = np.array(np.where(distMat == dist)).T
     if len(all_pairing) >= numOfPairs:
         return all_pairing[np.random.choice(len(all_pairing), numOfPairs, replace = False)]
@@ -341,6 +333,7 @@ def runSimulation(Connectivity,
     return this_realization
 
 defaultSimulation = runSimulation
+runSim = runSimulation
 
 def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
     import wires
