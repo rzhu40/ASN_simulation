@@ -84,7 +84,6 @@ def wireDistanceToSource(network):
     return distance
 
 def wireDistanceToPath(network, path):
-    edgeList = network.connectivity.edge_list
     V = network.numOfWires
     G = network.graph
     distance = np.zeros(V)
