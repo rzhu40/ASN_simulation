@@ -190,9 +190,9 @@ def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kr
     wireVoltage = Network.wireVoltage
     calcList = [inputPacker(calc_AIS, wireVoltage[sampling, i], calculator = calculator, calc_type='local') for i in range(Network.numOfWires)]
 
-    mp = useMyMp()
+    mp = useMyMP()
     with mp.Pool(processes=4) as pool:    
-        result = list(tqdm(pool.istarmap(calc_AIS, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
+        result = list(tqdm(pool.istarmap(calc_AIS, calcList), total = len(calcList), desc = f'Calculating AIS with {pool._processes} processors.', disable=disable_tqdm))
     
     out = np.array(result).T
     if calculator == 'gaussian':

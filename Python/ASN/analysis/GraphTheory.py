@@ -187,3 +187,26 @@ def graphVoltageDistribution(network, plot_type='nanowire',**kwargs):
         ax.set_zlabel('Junction voltage')
     else:
         print('Plot type error! Either nanowire or junction.')
+
+def get_junction_centrality(network, this_TimeStamp):
+    edgeList = network.connectivity.edge_list
+    conMat = np.zeros((network.numOfWires, network.numOfWires))
+    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    conG = nx.from_numpy_array(conMat)
+    
+    return np.array(list(nx.edge_current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
+
+def get_wire_centrality(network, this_TimeStamp):
+    edgeList = network.connectivity.edge_list
+    conMat = np.zeros((network.numOfWires, network.numOfWires))
+    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    conG = nx.from_numpy_array(conMat)
+    
+    return np.array(list(nx.current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
+
+def getCommMat(network):
+    adjMat = network.connectivity.adj_matrix
+    G = nx.from_numpy_array(adjMat)
+    comm = nx.communicability(G)
+    commMat = np.array([comm[i][j] for i in range(len(G)) for j in range(len(G))]).reshape(len(G),len(G))
+    return commMat
