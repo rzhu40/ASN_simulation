@@ -3,4 +3,7 @@
 *.pkl
 *.code-workspace
 *.log
-Python/ASN/log/multi_test.log
+*.xml
+*.iml
+*.iml
+*.xml
