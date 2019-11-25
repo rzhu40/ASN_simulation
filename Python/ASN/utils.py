@@ -249,8 +249,8 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
         lhs = np.zeros((V+numOfElectrodes, V+numOfElectrodes))
         lhs[0:V,0:V] = Gmat
-        for i in range(numOfElectrodes):
-            this_elec = electrodes[i]
+        for i, this_elec in enumerate(numOfElectrodes):
+            # this_elec = electrodes[i]
             lhs[V+i, this_elec] = 1
             lhs[this_elec, V+i] = 1
             rhs[V+i] = simulationOptions.stimulus[i].signal[this_time]
@@ -437,3 +437,31 @@ def useMyRC():
     mpl.rcParams['ytick.labelsize'] = 'medium'
     mpl.rcParams['font.size'] = 16
     
+def getEffectiveResistance(network, this_TimeStamp = 0, i = None, j = None):
+    test = network.electrodes[:]
+    if i != None:
+        test[0] = i
+    if j != None:
+        test[1] = j
+    N = network.numOfWires
+    edgeList = network.connectivity.edge_list
+    Gmat = np.zeros((N,N))
+    Gmat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat[edgeList[:,1], edgeList[:,0]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat = np.diag(np.sum(Gmat,axis=0)) - Gmat
+    L = np.zeros((N+1,N+1))
+    L[:N, :N] = Gmat
+    L[N,test] = 1, -1
+    L[test,N] = 1, -1
+    ki = np.zeros(N+1)
+    ki[-1] = 1
+    return -1/np.linalg.solve(L, ki)[-1]
+
+def getEffectiveRmat(network, this_TimeStamp = 0):
+    N = network.numOfWires
+    Rmat = np.zeros((N,N))
+    for i in range(N):
+        for j in range(i+1,N):
+            Rmat[i,j] = getEffectiveResistance(network, this_TimeStamp, i, j)
+    Rmat = Rmat+Rmat.T
+    return Rmat

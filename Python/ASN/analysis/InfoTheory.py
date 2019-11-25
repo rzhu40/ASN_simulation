@@ -150,15 +150,13 @@ def getSampling(TimeVector, dt_sampling = 1e-1, N =1e3, t_start = 10):
     sampling = np.arange(sample_start, sample_end, int(dt_sampling/dt_euler))
     return sampling
 
-def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', return_sampling = False, disable_tqdm = False):
+def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', disable_tqdm = False):
     sampling = getSampling(Network.TimeVector, dt_sampling, N, t_start)
     if sampling[-1] > Network.TimeVector.size:
         print('Simulation length not enough for sampling.')
         return None
     
     wireVoltage = Network.wireVoltage
-    E = Network.numOfJunctions
-    TE = np.zeros((sampling.size, E))
     edgeList = Network.connectivity.edge_list
     # mean_direction = np.sign(np.mean(Network.filamentState, axis=0))
     mean_direction = np.sign(np.mean(wireVoltage[-20:,edgeList[:,0]] - wireVoltage[-20:,edgeList[:,1]], axis=0))
@@ -172,7 +170,14 @@ def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kra
 
     with Pool(processes=4) as pool:    
         result = list(tqdm(pool.istarmap(calc_TE, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
-    return np.array(result).T
+
+    out = np.array(result).T
+    if calculator == 'gaussian':
+        out = np.nan_to_num(out)
+        out[out==np.inf] = 0
+        out[out==-np.inf] = 0
+
+    return out
 
 def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kraskov', disable_tqdm = False):
     sampling = getSampling(Network.TimeVector, dt_sampling, N, t_start)
@@ -185,4 +190,11 @@ def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kr
 
     with Pool(processes=4) as pool:    
         result = list(tqdm(pool.istarmap(calc_AIS, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
-    return np.array(result).T
+    
+    out = np.array(result).T
+    if calculator == 'gaussian':
+        out = np.nan_to_num(out)
+        out[out==np.inf] = 0
+        out[out==-np.inf] = 0
+        
+    return out
