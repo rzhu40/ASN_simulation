@@ -24,4 +24,4 @@ if __name__ == "__main__":
         sim = list(tqdm(pool.istarmap(defaultSimulation, calcList), total = len(calcList), desc = 'Running Simulation'))
     # sims = pool.starmap(defaultSimulation, initList)
     time2 = time.time()
-    logging.info(f'{len(initList)} simulations runs for {time2 - time1} seconds.')
+    logging.info(f'{len(calcList)} simulations runs for {time2 - time1} seconds.')
