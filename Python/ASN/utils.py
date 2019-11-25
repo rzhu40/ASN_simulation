@@ -249,7 +249,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
         lhs = np.zeros((V+numOfElectrodes, V+numOfElectrodes))
         lhs[0:V,0:V] = Gmat
-        for i, this_elec in enumerate(numOfElectrodes):
+        for i, this_elec in enumerate(electrodes):
             # this_elec = electrodes[i]
             lhs[V+i, this_elec] = 1
             lhs[this_elec, V+i] = 1

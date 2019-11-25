@@ -6,7 +6,8 @@ from utils import istarmap, inputPacker
 import warnings
 import os
 from pathlib import Path
-from multiprocessing import Pool
+from multiprocessing import Pool, set_start_method
+set_start_method('spawn', force=True)
 warnings.filterwarnings("ignore",category=UserWarning)
 
 def readFloatsFile(filename):

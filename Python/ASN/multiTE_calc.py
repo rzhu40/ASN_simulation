@@ -4,8 +4,6 @@ import networkx as nx
 from jpype import *
 import time
 
-import os
-os.chdir(r'C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN')
 from utils import *
 from analysis.InfoTheory import calc_network, TE_multi
 from analysis.mkg import mkg_generator

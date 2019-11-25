@@ -2,3 +2,5 @@
 *.mat
 *.pkl
 *.code-workspace
+*.log
+Python/ASN/log/multi_test.log
