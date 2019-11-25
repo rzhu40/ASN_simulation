@@ -2,12 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from jpype import *
 from tqdm import tqdm
-from utils import istarmap, inputPacker, useMyMP
+from utils import istarmap, inputPacker
 import warnings
 import os
 from pathlib import Path
-from multiprocessing import Pool, set_start_method
-# set_start_method('spawn')
+from multiprocessing import Pool
 warnings.filterwarnings("ignore",category=UserWarning)
 
 def readFloatsFile(filename):
@@ -34,7 +33,6 @@ def calc_AIS(data, auto_embed = True,
     root = file_path.parent
     jarLocation = os.path.join(root, 'JIDT', 'infodynamics.jar')
 
-    # jarLocation = r"C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN\JIDT\infodynamics.jar"
     if not isJVMStarted():
         startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
     
@@ -169,8 +167,7 @@ def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kra
             wire2, wire1 = edgeList[i,:]
         calcList.append(inputPacker(calc_TE, wireVoltage[sampling, wire1], wireVoltage[sampling, wire2], calculator = calculator, calc_type='local'))
     
-    mp = useMyMP()
-    with mp.Pool(processes=4) as pool:    
+    with Pool(processes=4) as pool:    
         result = list(tqdm(pool.istarmap(calc_TE, calcList), total = len(calcList), desc = f'Calculating TE with {pool._processes} processors.', disable=disable_tqdm))
 
     out = np.array(result).T
@@ -190,8 +187,7 @@ def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kr
     wireVoltage = Network.wireVoltage
     calcList = [inputPacker(calc_AIS, wireVoltage[sampling, i], calculator = calculator, calc_type='local') for i in range(Network.numOfWires)]
 
-    mp = useMyMP()
-    with mp.Pool(processes=4) as pool:    
+    with Pool(processes=4) as pool:    
         result = list(tqdm(pool.istarmap(calc_AIS, calcList), total = len(calcList), desc = f'Calculating AIS with {pool._processes} processors.', disable=disable_tqdm))
     
     out = np.array(result).T

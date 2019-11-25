@@ -14,11 +14,10 @@ from multiprocessing import Pool
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
-
 if __name__ == '__main__':
     sim1 = defaultSimulation(connectivity__(filename = '100nw_261junctions.mat'), T = 12, onAmp = 4, biasType = 'AC',findFirst = False)
     logging.info('Simulation Finished, starting multi-calculating with 4 cores')
-    TE1 = TE_multi(sim1, calculator = 'gaussian', N = 1e3, dt_sampling = 1e-3, t_start = 1)
+    TE1 = TE_multi(sim1, calculator = 'gaussian', N = 1e2, dt_sampling = 1e-3, t_start = 1)
     logging.info('multi finished, starting series calculation')
-    TE2 = calc_network(sim1, calculator = 'gaussian', N = 1e3, dt_sampling = 1e-3, t_start = 1)
+    TE2 = calc_network(sim1, calculator = 'gaussian', N = 1e2, dt_sampling = 1e-3, t_start = 1)
     logging.info('haha')
