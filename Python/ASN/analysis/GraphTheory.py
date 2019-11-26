@@ -211,3 +211,45 @@ def getCommMat(network):
     comm = nx.communicability(G)
     commMat = np.array([comm[i][j] for i in range(len(G)) for j in range(len(G))]).reshape(len(G),len(G))
     return commMat
+
+def extendLaplacian(network, this_TimeStamp=0, extend_pos = []):
+    N = network.numOfWires
+    edgeList = network.connectivity.edge_list
+    pos = np.append(network.electrodes, extend_pos).astype(int)
+    Gmat = np.zeros((N,N))
+    Gmat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat[edgeList[:,1], edgeList[:,0]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat = np.diag(np.sum(Gmat,axis=0)) - Gmat
+    
+    L = np.zeros((N+len(pos),N+len(pos)))
+    L[:N, :N] = Gmat
+    for i, this_elec in enumerate(pos):
+        L[N+i, this_elec] = 1
+        L[this_elec, N+i] = 1
+    return L
+
+def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
+    N = network.numOfWires
+    corrMat = np.zeros(network.connectivity.adj_matrix.shape)
+    for i in range(network.numOfWires):
+        count = 0
+        if i in network.electrodes:
+            tempL = extendLaplacian(network, this_TimeStamp)
+            rhs = np.zeros(tempL.shape[0])
+            rhs[N:] = np.array([i.signal[this_TimeStamp] for i in network.stimulus])
+            if network.stimulus[count].signal[this_TimeStamp] == 0:
+                rhs[N+count] = perturbation_rate
+            else:
+                rhs[N+count] = network.stimulus[count].signal[this_TimeStamp]*(1+perturbation_rate)
+            count += 1
+        else:
+            tempL = extendLaplacian(network, this_TimeStamp, i)
+            rhs = np.zeros(tempL.shape[0])
+            rhs[N:-1] = np.array([i.signal[this_TimeStamp] for i in network.stimulus])
+            rhs[-1] = network.wireVoltage[this_TimeStamp, i]*(1+perturbation_rate)
+            
+        newDistribution = np.linalg.solve(tempL, rhs)[:N]
+        if network.wireVoltage[this_TimeStamp, i] != 0:
+            corrMat[i,:] = abs((newDistribution - network.wireVoltage[this_TimeStamp, :])/network.wireVoltage[this_TimeStamp, :])/ \
+                            abs(perturbation_rate)
+    return corrMat
