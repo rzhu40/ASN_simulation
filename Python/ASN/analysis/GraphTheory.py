@@ -187,7 +187,7 @@ def graphVoltageDistribution(network, plot_type='nanowire',**kwargs):
     else:
         print('Plot type error! Either nanowire or junction.')
 
-def get_junction_centrality(network, this_TimeStamp):
+def get_junction_centrality(network, this_TimeStamp=0):
     edgeList = network.connectivity.edge_list
     conMat = np.zeros((network.numOfWires, network.numOfWires))
     conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
@@ -195,7 +195,7 @@ def get_junction_centrality(network, this_TimeStamp):
     
     return np.array(list(nx.edge_current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
 
-def get_wire_centrality(network, this_TimeStamp):
+def get_wire_centrality(network, this_TimeStamp=0):
     edgeList = network.connectivity.edge_list
     conMat = np.zeros((network.numOfWires, network.numOfWires))
     conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
