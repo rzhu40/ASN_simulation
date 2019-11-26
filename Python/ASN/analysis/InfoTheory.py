@@ -172,9 +172,9 @@ def TE_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kra
 
     out = np.array(result).T
     if calculator == 'gaussian':
-        out = np.nan_to_num(out)
         out[out==np.inf] = 0
         out[out==-np.inf] = 0
+        out = np.nan_to_num(out)
 
     return out
 
@@ -192,8 +192,8 @@ def AIS_multi(Network, dt_sampling = 1e-1, N = 1e3, t_start=10, calculator = 'kr
     
     out = np.array(result).T
     if calculator == 'gaussian':
-        out = np.nan_to_num(out)
         out[out==np.inf] = 0
         out[out==-np.inf] = 0
+        out = np.nan_to_num(out)
         
     return out
