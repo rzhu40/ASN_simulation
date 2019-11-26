@@ -205,13 +205,16 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
     import dataStruct 
     Network = dataStruct.network__()
-    Network.junctionSwitch = np.zeros((niterations, E), dtype = bool)
+    sampling = np.arange(0, niterations, save_steps)
     if lite_mode:
+        Network.connectivity = connectivity__(adjMat = connectivity.adj_matrix)
         Network.filamentState = np.zeros((int(niterations/save_steps), E))
         Network.wireVoltage = np.zeros((int(niterations/save_steps), V))
         Network.electrodeCurrent = np.zeros((int(niterations/save_steps), numOfElectrodes))
         Network.TimeVector = np.zeros(int(niterations/save_steps))
     else:        
+        Network.connectivity = connectivity
+        Network.TimeVector = simulationOptions.TimeVector
         Network.filamentState = np.zeros((niterations, E))
         Network.junctionVoltage = np.zeros((niterations, E))
         # Network.junctionResistance = np.zeros((niterations, E))
@@ -274,20 +277,13 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
 
     Network.numOfWires = V
     Network.numOfJunctions = E
-    # Network.adjMat = connectivity.adj_matrix
-    # Network.graph = nx.from_numpy_array(connectivity.adj_matrix)
-    # if nx.has_path(Network.graph, Network.sources[0], Network.drains[0]):
-    #     Network.shortestPaths = [p for p in nx.all_shortest_paths(Network.graph, 
-    #                                                         source=Network.sources[0], 
-    #                                                         target=Network.drains[0])]
     Network.electrodes = simulationOptions.electrodes
     Network.criticalFlux = junctionState.critialFlux
     Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
-    Network.connectivity = connectivity
-    Network.conductance = Network.electrodeCurrent[:,1]/simulationOptions.stimulus[0].signal
+    Network.conductance = Network.electrodeCurrent[:,1]/simulationOptions.stimulus[0].signal[sampling]
     if not lite_mode:
         Network.junctionResistance = 1/Network.junctionConductance
-        Network.TimeVector = simulationOptions.TimeVector
+        
     return Network
 
 def runSimulation(Connectivity, 
