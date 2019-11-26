@@ -243,7 +243,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         Gmat = np.diag(np.sum(Gmat,axis=0)) - Gmat
 
         lhs = np.zeros((V+numOfElectrodes, V+numOfElectrodes))
-        lhs[0:V,0:V] = Gmat
+        lhs[:V,:V] = Gmat
         for i, this_elec in enumerate(electrodes):
             # this_elec = electrodes[i]
             lhs[V+i, this_elec] = 1
@@ -264,8 +264,8 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         if lite_mode:
             if this_time%save_steps == 0:
                 Network.wireVoltage[this_time//save_steps,:] = wireVoltage
-                Network.filamentState[this_time//save_steps,:] = junctionState.filamentState
                 Network.electrodeCurrent[this_time//save_steps,:] = sol[V:]
+                Network.filamentState[this_time//save_steps,:] = junctionState.filamentState
                 Network.TimeVector[this_time//save_steps] = simulationOptions.TimeVector[this_time]
         else:
             Network.wireVoltage[this_time,:] = wireVoltage
@@ -278,10 +278,9 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     Network.numOfWires = V
     Network.numOfJunctions = E
     Network.electrodes = simulationOptions.electrodes
-    Network.criticalFlux = junctionState.critialFlux
-    Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
     Network.conductance = Network.electrodeCurrent[:,1]/simulationOptions.stimulus[0].signal[sampling]
     if not lite_mode:
+        Network.stimulus = [simulationOptions.stimulus[i] for i in range(numOfElectrodes)]
         Network.junctionResistance = 1/Network.junctionConductance
         
     return Network
@@ -427,7 +426,10 @@ def useMyRC():
     mpl.rcParams['font.size'] = 16
     
 def getEffectiveResistance(network, this_TimeStamp = 0, i = None, j = None):
-    test = network.electrodes[:]
+    """
+    Only works for single source-drian pairing for now.
+    """
+    test = network.electrodes[:2]
     if i != None:
         test[0] = i
     if j != None:
