@@ -6,8 +6,6 @@ from itertools import islice
 def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
     if isDirected:
         edgeList = network.connectivity.edge_list
-        source = network.sources[0]
-        drain = network.drains[0]
         onGraph = nx.DiGraph()
         onGraph.add_nodes_from(range(network.numOfWires))
         junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
