@@ -17,11 +17,19 @@ def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
                 onGraph.add_edge(edgeList[i,1], edgeList[i,0])
     else:
         edgeList = network.connectivity.edge_list
-        adjMat = np.zeros((network.numOfWires, network.numOfWires))
+        adjMat = np.zeros(network.connectivity.adj_matrix.shape)
         adjMat[edgeList[:,0], edgeList[:,1]] = network.junctionSwitch[this_TimeStamp,:]
-        adjMat[edgeList[:,1], edgeList[:,0]] = network.junctionSwitch[this_TimeStamp,:]
+        adjMat = adjMat + adjMat.T
         onGraph = nx.from_numpy_array(adjMat)
     return onGraph
+
+def getDiGraph(network, this_TimeStmap = 0):
+    edgeList = network.connectivity.edge_list
+    diMat = np.zeros(network.connectivity.adj_matrix.shape)
+    diMat[edgeList[:,0], edgeList[:,1]] = np.sign(network.junctionVoltage[this_TimeStmap,:])
+    diMat = diMat-diMat.T
+    diMat[diMat<0] = 0
+    return nx.from_numpy_array(diMat)
 
 def findCurrent(network, numToFind = 1):
     source = network.sources[0]
