@@ -68,6 +68,6 @@ if __name__ == '__main__':
     sim1 = defaultSimulation(connectivity__(filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat'),
                         contactMode='preSet', electrodes=[72,29],
                         biasType='DC', offTime = 5, onAmp = 1.1, T = 1)
-    movie1 = graph_movie(sim1, start=0.8, end=1, dt=0.01)
+    movie1 = graph_movie(sim1, start=0.8, end=1, dt=0.01, edge_mode = 'voltage')
 
     plt.show()

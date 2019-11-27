@@ -5,98 +5,58 @@ import warnings
 import matplotlib.cbook
 warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
-def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', colorbar=False, TE_mode = 'local', **kwargs):
-    if edge_mode == 'TE':
-        if hasattr(network, 'TE'):
-            TimeVector = network.TimeVector[network.sampling]
-        else:
-            print('No TE attached to network yet. Please calcualte TE first.')
-            from sys import exit
-            exit()
-    else:
-        TimeVector = network.TimeVector
-
+def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', colorbar=False, **kwargs):
+    TimeVector = network.TimeVector
     if 'TimeStamp' in kwargs:
-            this_TimeStamp = kwargs['TimeStamp']
+        this_TimeStamp = kwargs['TimeStamp']
     elif 'time' in kwargs:
         if kwargs['time'] in TimeVector:
             this_TimeStamp = np.where(TimeVector == kwargs['time'])[0][0]
-            real_TimeStamp = np.where(network.TimeVector == kwargs['time'])[0][0]
         elif (kwargs['time'] < min(TimeVector)) or (kwargs['time'] > max(TimeVector)):
             print('Input time exceeds simulation period.')
             this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
-            real_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
         else:
             this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
-            real_TimeStamp = np.argmin(abs(network.TimeVector - kwargs['time']))
-    else:
-        this_TimeStamp = 0
-        real_TimeStamp = 0
-    
+
     G = nx.from_numpy_array(network.connectivity.adj_matrix)
     pos = nx.layout.kamada_kawai_layout(G)   
     edgeList = network.connectivity.edge_list
     sources = network.sources
     drains = network.drains
-
-    this_switch = network.junctionSwitch[real_TimeStamp, :]
-
+    this_switch = network.junctionSwitch[this_TimeStamp, :]
+    
     if edge_mode == 'current':
         graphView = nx.DiGraph()
         graphView.add_nodes_from(range(network.numOfWires))
-        this_current = network.junctionVoltage[real_TimeStamp,:]/network.junctionResistance[real_TimeStamp,:]
-        for i in range(network.numOfJunctions):
-            if this_switch[i]:
-                if this_current[i]>0:
-                    graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_current[i]), width = 2, style = 'solid')
-                else:
-                    graphView.add_edge(edgeList[i,1], edgeList[i,0], weight = abs(this_current[i]), width = 2, style = 'solid')
+        edge_weight = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
+        onPos = np.sign(edge_weight * this_switch) > 0
+        onNeg = np.sign(edge_weight * this_switch) < 0
 
-    elif edge_mode == 'voltage':
-        graphView = nx.empty_graph(network.numOfWires)
-        this_voltage = network.junctionVoltage[this_TimeStamp,:]
-        for i in range(network.numOfJunctions):
-            if this_switch[i]:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_voltage[i]), width = 2, style='solid')
-            else:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_voltage[i]), width = 1, style='dashed')
-    
-    elif edge_mode == 'filament':
-        graphView = nx.empty_graph(network.numOfWires)
-        this_filament = network.filamentState[this_TimeStamp,:]
-        for i in range(network.numOfJunctions):
-            if this_switch[i]:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_filament[i]), width = 2, style='solid')
-            else:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = abs(this_filament[i]), width = 1, style='dashed')
+        zipPos = [(edgeList[i,0], edgeList[i,1], abs(edge_weight[i])) for i in np.where(onPos)[0]]
+        zipNeg = [(edgeList[i,1], edgeList[i,0], abs(edge_weight[i]) )for i in np.where(onNeg)[0]]
+        graphView.add_weighted_edges_from(zipPos, width = 2, style = 'solid')
+        graphView.add_weighted_edges_from(zipNeg, width = 2, style = 'solid')
+    else:
+        if edge_mode == 'filament': 
+            edge_weight = network.filamentState[this_TimeStamp,:]
+        elif edge_mode == 'voltage':
+            edge_weight = network.junctionVoltage[this_TimeStamp,:]
+        elif edge_mode == 'custom':
+            edge_weight = kwargs['edge_weight']
 
-    elif edge_mode == 'Lyapunov':
         graphView = nx.empty_graph(network.numOfWires)
-        if not hasattr(network, 'Lyapunov'):
-            print('Lyapunov not calculated')
-            network.Lyapunov = np.zeros(network.numOfJunctions)
-        for i in range(network.numOfJunctions):
-            if this_switch[i]:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = network.Lyapunov[i], width = 2, style='solid')
-            else:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = network.Lyapunov[i], width = 1, style='dashed')
-
-    elif edge_mode == 'TE':
-        graphView = nx.empty_graph(network.numOfWires)
-        if TE_mode == 'local':
-            this_TE = network.TE[this_TimeStamp,:]
-        elif TE_mode == 'average':
-            this_TE = np.mean(network.TE[:this_TimeStamp,:], axis = 0)
-
-        for i in range(network.numOfJunctions):
-            if this_switch[i]:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = this_TE[i], width = 2, style='solid')
-            else:
-                graphView.add_edge(edgeList[i,0], edgeList[i,1], weight = this_TE[i], width = 1, style='dashed')
+        zipOn = [(edgeList[i,0], edgeList[i,1], abs(edge_weight[i])) for i in np.where(this_switch)[0]]
+        zipOff = [(edgeList[i,0], edgeList[i,1], abs(edge_weight[i])) for i in np.where(1-this_switch)[0]]
+        graphView.add_weighted_edges_from(zipOn, width = 2, style='solid')
+        graphView.add_weighted_edges_from(zipOff, width = 1, style='dashed')
 
     from analysis.GraphTheory import getOnGraph
-    tempGraph = getOnGraph(network, this_TimeStamp=real_TimeStamp)
+    tempGraph = getOnGraph(network, this_TimeStamp=this_TimeStamp)
     pathFormed = nx.has_path(tempGraph, sources[0], drains[0])
+    if pathFormed:
+        cmap = plt.cm.Reds
+    else:
+        cmap = plt.cm.Blues
 
     edge_colors = [graphView[u][v]['weight'] for u,v in graphView.edges]
     widths = [graphView[u][v]['width'] for u,v in graphView.edges]
@@ -112,27 +72,19 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     if ax == None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.axis('off')
-    
-    if pathFormed:
-        cmap = plt.cm.Reds
+        cmap_max = np.max(edge_colors)
     else:
-        cmap = plt.cm.Blues
-    
+        if len(edge_colors)==0:
+            cmap_max = 1
+        elif edge_mode == 'current':
+            cmap_max = np.max(abs(network.junctionVoltage * network.junctionConductance))
+        elif edge_mode == 'voltage':
+            cmap_max = np.max(abs(network.junctionVoltage))
+        elif edge_mode == 'filament':
+            cmap_max = np.max(network.filamentState)
+        else:
+            cmap_max = np.max(abs(edge_colors))
     cmap_min = 0
-    if len(edge_colors)==0:
-        cmap_max = 1
-    elif edge_mode == 'current':
-        cmap_max = max(edge_colors)
-    elif edge_mode == 'voltage':
-        cmap_max = np.max(abs(network.junctionVoltage))
-    elif edge_mode == 'filament':
-        cmap_max = np.max(network.filamentState)
-    elif edge_mode == 'Lyapunov':
-        cmap_min = np.min(network.Lyapunov)
-        cmap_max = np.max(network.Lyapunov)
-    elif edge_mode == 'TE':
-        cmap_min = np.min(this_TE)
-        cmap_max = np.max(this_TE)
 
     nx.draw_networkx(graphView, pos,
                     node_size=350,
@@ -150,10 +102,13 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         nx.draw_networkx_edges(G, pos, width = 1, alpha = 0.15, ax=ax)
 
     ax.set_facecolor((0.8,0.8,0.8))
-    if (edge_mode == 'TE') & (TE_mode == 'average'):
-        ax.set_title(f'Network average TE from t = 0 to {np.round(TimeVector[this_TimeStamp],3)}')
+    if edge_mode == 'custom':
+        try:
+            ax.set_title(f'Network at t = {np.round(TimeVector[this_TimeStamp],3)}')
+        except:
+            ax.set_title(f'Network at t = {np.round(TimeVector[this_TimeStamp],3)}')
     else:
-        ax.set_title('Network '+edge_mode+f' at t = {np.round(TimeVector[this_TimeStamp],3)}')
+        ax.set_title(f'Network {edge_mode} at t = {np.round(TimeVector[this_TimeStamp],3)}')
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
     
@@ -166,11 +121,14 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     return ax
 
 if __name__ == '__main__':
-    import os 
-    os.chdir(r'C:\Users\rzhu\Documents\PhD\ASN_simulation\Python\ASN')
     from utils import *
-    sim1 = defaultSimulation(connectivity__(filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat'),
-                        contactMode='preSet', electrodes=[72,29],
-                        biasType='DC', offTime = 5, onAmp = 1.1, T = 1)
-    draw_graph(sim1, time = 0.9, edge_mode ='voltage')
+    Connectivity = connectivity__('100nw_261junctions.mat')
+    sim1 = runSim(Connectivity, T = 5, contactMode='farthest', biasType = 'DC', findFirst=False)
+    from analysis.GraphTheory import get_junction_centrality
+    cent = get_junction_centrality(sim1, 4000)
+
+    draw_graph(sim1, time = 4, edge_mode ='custom', edge_weight = cent)
+    plt.show()
+
+    draw_graph(sim1, time = 4, edge_mode ='voltage', edge_weight = cent)
     plt.show()
