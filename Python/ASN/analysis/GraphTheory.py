@@ -274,7 +274,7 @@ def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disa
     from multiprocessing import Pool
     from tqdm import tqdm
     import warnings
-    warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
+    warnings.filterwarnings("ignore", message="invalid value encountered")
 
     N = connectivity.numOfWires
     others = np.setdiff1d(range(N), nodeIdx)
