@@ -273,7 +273,11 @@ def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
                             abs(perturbation_rate)
     return corrMat
 
-def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05):
+def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disable_tqdm = False):
+    from utils import inputPacker,runSimulation
+    from multiprocessing import Pool
+    from tqdm import tqdm
+
     N = connectivity.numOfWires
     others = np.setdiff1d(range(N), nodeIdx)
     custom = np.zeros(5000)
@@ -287,7 +291,7 @@ def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05):
             for i in others]
     
     with Pool(4) as pool: 
-        simList = list(tqdm(pool.istarmap(runSim, calcList), total = N-1, desc = '🚴.......🚓'))
+        simList = list(tqdm(pool.istarmap(runSimulation, calcList), total = N-1, desc = '🚴.......🚓', disable = disable_tqdm))
         
     S1List = [sim.wireVoltage[perturbeTime,others] for sim in simList]
     S2List = [sim.wireVoltage[-1,others] for sim in simList]
