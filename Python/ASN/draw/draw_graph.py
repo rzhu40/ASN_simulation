@@ -17,6 +17,8 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
             this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
         else:
             this_TimeStamp = np.argmin(abs(TimeVector - kwargs['time']))
+    else:
+        this_TimeStamp = 0
 
     G = nx.from_numpy_array(network.connectivity.adj_matrix)
     pos = nx.layout.kamada_kawai_layout(G)   
@@ -72,7 +74,10 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     if ax == None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.axis('off')
-        cmap_max = np.max(edge_colors)
+        if len(edge_colors)==0:
+            cmap_max = 1
+        else:
+            cmap_max = np.max(edge_colors)
     else:
         if len(edge_colors)==0:
             cmap_max = 1
@@ -122,13 +127,14 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
 
 if __name__ == '__main__':
     from utils import *
-    Connectivity = connectivity__('100nw_261junctions.mat')
-    sim1 = runSim(Connectivity, T = 5, contactMode='farthest', biasType = 'DC', findFirst=False)
-    from analysis.GraphTheory import get_junction_centrality
-    cent = get_junction_centrality(sim1, 4000)
+    # Connectivity = connectivity__('100nw_261junctions.mat')
+    # sim1 = runSim(Connectivity, T = 5, contactMode='farthest', biasType = 'DC', findFirst=False)
+    # from analysis.GraphTheory import get_junction_centrality
+    # cent = get_junction_centrality(sim1, 4000)
 
-    draw_graph(sim1, time = 4, edge_mode ='custom', edge_weight = cent)
-    plt.show()
-
-    draw_graph(sim1, time = 4, edge_mode ='voltage', edge_weight = cent)
-    plt.show()
+    # draw_graph(sim1, time = 4, edge_mode ='custom', edge_weight = cent)
+    # plt.show()
+    wires = generateNetwork(20, 50, 100)
+    Connectivity = connectivity__(wires_dict = wires)
+    sim1 = runSim(Connectivity, T = 5, contactMode = 'farthest', biasType = 'DC', onAmp = 2)
+    draw_graph(sim1, time = 0)
