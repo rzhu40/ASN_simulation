@@ -6,15 +6,21 @@ from itertools import islice
 def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
     if isDirected:
         edgeList = network.connectivity.edge_list
-        onGraph = nx.DiGraph()
-        onGraph.add_nodes_from(range(network.numOfWires))
-        junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
-        this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
-        for i in range(network.numOfJunctions):
-            if this_direction[i] == 1:
-                onGraph.add_edge(edgeList[i,0], edgeList[i,1])
-            elif this_direction[i] == -1:
-                onGraph.add_edge(edgeList[i,1], edgeList[i,0])
+        diMat = np.zeros(network.connectivity.adj_matrix.shape)
+        diMat[edgeList[:,0], edgeList[:,1]] = np.sign(network.junctionVoltage[this_TimeStamp,:]\
+                                                *network.junctionSwitch[this_TimeStamp,:])
+        diMat = diMat-diMat.T
+        diMat[diMat<0] = 0
+        onGraph = nx.from_numpy_array(diMat, create_using=nx.DiGraph())
+        # onGraph = nx.DiGraph()
+        # onGraph.add_nodes_from(range(network.numOfWires))
+        # junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
+        # this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
+        # for i in range(network.numOfJunctions):
+        #     if this_direction[i] == 1:
+        #         onGraph.add_edge(edgeList[i,0], edgeList[i,1])
+        #     elif this_direction[i] == -1:
+        #         onGraph.add_edge(edgeList[i,1], edgeList[i,0])
     else:
         edgeList = network.connectivity.edge_list
         adjMat = np.zeros(network.connectivity.adj_matrix.shape)
@@ -23,13 +29,21 @@ def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
         onGraph = nx.from_numpy_array(adjMat)
     return onGraph
 
-def getDiGraph(network, this_TimeStmap = 0):
+def getDiGraph(network, this_TimeStamp = 0):
     edgeList = network.connectivity.edge_list
     diMat = np.zeros(network.connectivity.adj_matrix.shape)
-    diMat[edgeList[:,0], edgeList[:,1]] = np.sign(network.junctionVoltage[this_TimeStmap,:])
+    diMat[edgeList[:,0], edgeList[:,1]] = np.sign(network.junctionVoltage[this_TimeStamp,:])
     diMat = diMat-diMat.T
     diMat[diMat<0] = 0
-    return nx.from_numpy_array(diMat)
+    return nx.from_numpy_array(diMat, create_using=nx.DiGraph())
+
+def getInDegree(network, this_TimeStamp = 0):
+    diGraph = getDiGraph(network, this_TimeStamp)
+    return np.array(list(dict(diGraph.in_degree(range(len(diGraph)))).values()))
+
+def getOutDegree(network, this_TimeStamp = 0):
+    diGraph = getDiGraph(network, this_TimeStamp)
+    return np.array(list(dict(diGraph.out_degree(range(len(diGraph)))).values()))
 
 def findCurrent(network, numToFind = 1):
     source = network.sources[0]
@@ -104,7 +118,47 @@ def wireDistanceToPath(network, path):
                 min_dist = min(min_dist, temp_dist)
             distance[i] = min_dist
     return distance
+    
+def get_junction_centrality(network, this_TimeStamp=0):
+    edgeList = network.connectivity.edge_list
+    conMat = np.zeros((network.numOfWires, network.numOfWires))
+    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    conG = nx.from_numpy_array(conMat)
+    
+    return np.array(list(nx.edge_current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
 
+def get_wire_centrality(network, this_TimeStamp=0, mode = 'betweenness'):
+    edgeList = network.connectivity.edge_list
+    conMat = np.zeros((network.numOfWires, network.numOfWires))
+    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    conG = nx.from_numpy_array(conMat)
+    if mode == 'betweenness':
+        return np.array(list(nx.current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
+    elif mode == 'closeness':
+        return np.array(list(nx.current_flow_closeness_centrality(conG, weight = 'weight').values()))
+
+def getCommMat(network):
+    adjMat = network.connectivity.adj_matrix
+    G = nx.from_numpy_array(adjMat)
+    comm = nx.communicability(G)
+    commMat = np.array([comm[i][j] for i in range(len(G)) for j in range(len(G))]).reshape(len(G),len(G))
+    return commMat
+
+def extendLaplacian(network, this_TimeStamp=0, extend_pos = []):
+    N = network.numOfWires
+    edgeList = network.connectivity.edge_list
+    pos = np.append(network.electrodes, extend_pos).astype(int)
+    Gmat = np.zeros((N,N))
+    Gmat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat[edgeList[:,1], edgeList[:,0]] = network.junctionConductance[this_TimeStamp,:]
+    Gmat = np.diag(np.sum(Gmat,axis=0)) - Gmat
+    
+    L = np.zeros((N+len(pos),N+len(pos)))
+    L[:N, :N] = Gmat
+    for i, this_elec in enumerate(pos):
+        L[N+i, this_elec] = 1
+        L[this_elec, N+i] = 1
+    return L
 def junctionDistanceToSource(network):
     edgeList = network.connectivity.edge_list
     E = network.numOfJunctions
@@ -192,47 +246,6 @@ def graphVoltageDistribution(network, plot_type='nanowire',**kwargs):
         ax.set_zlabel('Junction voltage')
     else:
         print('Plot type error! Either nanowire or junction.')
-
-def get_junction_centrality(network, this_TimeStamp=0):
-    edgeList = network.connectivity.edge_list
-    conMat = np.zeros((network.numOfWires, network.numOfWires))
-    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
-    conG = nx.from_numpy_array(conMat)
-    
-    return np.array(list(nx.edge_current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
-
-def get_wire_centrality(network, this_TimeStamp=0, mode = 'betweenness'):
-    edgeList = network.connectivity.edge_list
-    conMat = np.zeros((network.numOfWires, network.numOfWires))
-    conMat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
-    conG = nx.from_numpy_array(conMat)
-    if mode == 'betweenness':
-        return np.array(list(nx.current_flow_betweenness_centrality_subset(conG, network.sources, network.drains, weight = 'weight').values()))
-    elif mode == 'closeness':
-        return np.array(list(nx.current_flow_closeness_centrality(conG, weight = 'weight').values()))
-
-def getCommMat(network):
-    adjMat = network.connectivity.adj_matrix
-    G = nx.from_numpy_array(adjMat)
-    comm = nx.communicability(G)
-    commMat = np.array([comm[i][j] for i in range(len(G)) for j in range(len(G))]).reshape(len(G),len(G))
-    return commMat
-
-def extendLaplacian(network, this_TimeStamp=0, extend_pos = []):
-    N = network.numOfWires
-    edgeList = network.connectivity.edge_list
-    pos = np.append(network.electrodes, extend_pos).astype(int)
-    Gmat = np.zeros((N,N))
-    Gmat[edgeList[:,0], edgeList[:,1]] = network.junctionConductance[this_TimeStamp,:]
-    Gmat[edgeList[:,1], edgeList[:,0]] = network.junctionConductance[this_TimeStamp,:]
-    Gmat = np.diag(np.sum(Gmat,axis=0)) - Gmat
-    
-    L = np.zeros((N+len(pos),N+len(pos)))
-    L[:N, :N] = Gmat
-    for i, this_elec in enumerate(pos):
-        L[N+i, this_elec] = 1
-        L[this_elec, N+i] = 1
-    return L
 
 def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
     N = network.numOfWires
