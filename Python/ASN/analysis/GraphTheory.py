@@ -28,6 +28,11 @@ def getDiGraph(network, this_TimeStamp = 0):
     diMat[diMat<0] = 0
     return nx.from_numpy_array(diMat, create_using=nx.DiGraph())
 
+def getDistMat(network):
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
+    distMat = np.array(nx.floyd_warshall_numpy(G))
+    return distMat
+
 def getInDegree(network, this_TimeStamp = 0):
     diGraph = getDiGraph(network, this_TimeStamp)
     return np.array(list(dict(diGraph.in_degree(range(len(diGraph)))).values()))
@@ -268,6 +273,8 @@ def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disa
     from utils import inputPacker,runSimulation
     from multiprocessing import Pool
     from tqdm import tqdm
+    import warnings
+    warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
 
     N = connectivity.numOfWires
     others = np.setdiff1d(range(N), nodeIdx)
