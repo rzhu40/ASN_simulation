@@ -330,7 +330,7 @@ def runSimulation(Connectivity,
 defaultSimulation = runSimulation
 runSim = runSimulation
 
-def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
+def generateNetwork(numOfWires = 100, dispersion=100, mean_length = 100, this_seed = 42, iterations=0, max_iters = 10):
     import wires
     wires_dict = wires.generate_wires_distribution(number_of_wires = numOfWires,
                                             wire_av_length = mean_length,
@@ -346,7 +346,7 @@ def generate_network(numOfWires = 100, dispersion=100, mean_length = 100, this_s
     if wires.check_connectedness(wires_dict):
         return wires_dict
     elif iterations < max_iters: 
-        generate_network(numOfWires, dispersion, mean_length, this_seed+1, iterations+1, max_iters)
+        generateNetwork(numOfWires, dispersion, mean_length, this_seed+1, iterations+1, max_iters)
     else:
         return None
 
