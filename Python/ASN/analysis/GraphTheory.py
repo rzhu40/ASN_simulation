@@ -12,15 +12,6 @@ def getOnGraph(network, this_TimeStamp = 0, isDirected = True):
         diMat = diMat-diMat.T
         diMat[diMat<0] = 0
         onGraph = nx.from_numpy_array(diMat, create_using=nx.DiGraph())
-        # onGraph = nx.DiGraph()
-        # onGraph.add_nodes_from(range(network.numOfWires))
-        # junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
-        # this_direction = np.sign(junctionCurrent*network.junctionSwitch[this_TimeStamp,:])
-        # for i in range(network.numOfJunctions):
-        #     if this_direction[i] == 1:
-        #         onGraph.add_edge(edgeList[i,0], edgeList[i,1])
-        #     elif this_direction[i] == -1:
-        #         onGraph.add_edge(edgeList[i,1], edgeList[i,0])
     else:
         edgeList = network.connectivity.edge_list
         adjMat = np.zeros(network.connectivity.adj_matrix.shape)
@@ -96,7 +87,7 @@ def getSubGraphComm(network, this_TimeStamp = 0):
 
 def wireDistanceToSource(network):
     V = network.numOfWires
-    G = network.graph
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
     distance = np.zeros(V)
     source = network.sources[0]
     for i in range(V):
@@ -105,7 +96,7 @@ def wireDistanceToSource(network):
 
 def wireDistanceToPath(network, path):
     V = network.numOfWires
-    G = network.graph
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
     distance = np.zeros(V)
     
     for i in range(V):
@@ -162,7 +153,7 @@ def extendLaplacian(network, this_TimeStamp=0, extend_pos = []):
 def junctionDistanceToSource(network):
     edgeList = network.connectivity.edge_list
     E = network.numOfJunctions
-    G = network.graph
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
     distance = np.zeros(E)
     source = network.sources[0]
 
@@ -176,7 +167,7 @@ def junctionDistanceToSource(network):
 def junctionDistanceToPath(network, path):
     edgeList = network.connectivity.edge_list
     E = network.numOfJunctions
-    G = network.graph
+    G = nx.from_numpy_array(network.connectivity.adj_matrix)
     distance = np.zeros(E)  
     
     for i in range(E):
