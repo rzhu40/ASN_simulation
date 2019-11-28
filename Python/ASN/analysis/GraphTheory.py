@@ -118,7 +118,7 @@ def wireDistanceToPath(network, path):
                 min_dist = min(min_dist, temp_dist)
             distance[i] = min_dist
     return distance
-    
+
 def get_junction_centrality(network, this_TimeStamp=0):
     edgeList = network.connectivity.edge_list
     conMat = np.zeros((network.numOfWires, network.numOfWires))
@@ -272,3 +272,28 @@ def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
             corrMat[i,:] = abs((newDistribution - network.wireVoltage[this_TimeStamp, :])/network.wireVoltage[this_TimeStamp, :])/ \
                             abs(perturbation_rate)
     return corrMat
+
+def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05):
+    N = connectivity.numOfWires
+    others = np.setdiff1d(range(N), nodeIdx)
+    custom = np.zeros(5000)
+    perturbeTime = 4000
+    custom[:perturbeTime] = 2
+    custom[perturbeTime:] = 2.2
+    calcList = [inputPacker(runSimulation, connectivity, T = 5, 
+                        contactMode = 'preSet', electrodes = [nodeIdx, i], 
+                        biasType = 'Custom', customSignal = custom,
+                        findFirst = False, disable_tqdm = True, lite_mode = True) 
+            for i in others]
+    
+    with Pool(4) as pool: 
+        simList = list(tqdm(pool.istarmap(runSim, calcList), total = N-1, desc = '🚴.......🚓'))
+        
+    S1List = [sim.wireVoltage[perturbeTime,others] for sim in simList]
+    S2List = [sim.wireVoltage[-1,others] for sim in simList]
+    influence = np.zeros((N-1,N))
+    
+    for i in range(N-1):
+        influence[i,others] = np.nan_to_num(abs(((S2List[i] - S1List[i])/S1List[i])/(0.2/2)))
+        
+    return np.mean(influence, axis = 0)
