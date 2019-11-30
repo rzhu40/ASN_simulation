@@ -155,6 +155,7 @@ def extendLaplacian(network, this_TimeStamp=0, extend_pos = []):
         L[N+i, this_elec] = 1
         L[this_elec, N+i] = 1
     return L
+
 def junctionDistanceToSource(network):
     edgeList = network.connectivity.edge_list
     E = network.numOfJunctions
@@ -269,7 +270,7 @@ def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
                             abs(perturbation_rate)
     return corrMat
 
-def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disable_tqdm = False):
+def getWireInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disable_tqdm = False, **kwargs):
     from utils import inputPacker,runSimulation
     from multiprocessing import Pool
     from tqdm import tqdm
@@ -280,12 +281,12 @@ def getNodeInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disa
     others = np.setdiff1d(range(N), nodeIdx)
     custom = np.zeros(5000)
     perturbeTime = 4000
-    custom[:perturbeTime] = 2
-    custom[perturbeTime:] = 2.2
+    custom[:perturbeTime] = onAmp
+    custom[perturbeTime:] = onAmp*(1+perturbeRate)
     calcList = [inputPacker(runSimulation, connectivity, T = 5, 
                         contactMode = 'preSet', electrodes = [nodeIdx, i], 
                         biasType = 'Custom', customSignal = custom,
-                        findFirst = False, disable_tqdm = True, lite_mode = True) 
+                        findFirst = False, disable_tqdm = True, lite_mode = True, **kwargs) 
             for i in others]
     
     with Pool(4) as pool: 
