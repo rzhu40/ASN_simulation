@@ -2,6 +2,8 @@ import numpy as np
 import scipy.io as sio
 import networkx as nx
 import time
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 from tqdm import tqdm
 from draw import *
@@ -72,6 +74,7 @@ class junctionState__:
 
     def updateConductance(self):
         self.OnOrOff = abs(self.filamentState) >= self.critialFlux
+
         if self.mode == 'binary':
             self.conductance = self.offConductance + \
                             (self.onConductance-self.offConductance)*self.OnOrOff
@@ -182,7 +185,7 @@ def get_boundary_pairing(connectivity, numOfPairs=5):
     electrodes[numOfPairs:] = np.argsort(centerX)[-numOfPairs:]
     return electrodes.astype(int)
 
-def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = False, disable_tqdm = False, save_steps = 1):
+def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = False, disable_tqdm = False, save_steps = 1, **kwargs):
 
     if simulationOptions.contactMode == 'farthest':
         simulationOptions.electrodes = get_farthest_pairing(connectivity.adj_matrix)
@@ -233,6 +236,12 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     if len(Network.drains) == 0:
         Network.drains.append(electrodes[1])
 
+    if 'freeze_wire' in kwargs:
+        freeze_wire = kwargs['freeze_wire']
+        freeze_TimeStamp = kwargs['freeze_TimeStamp']
+    else:
+        freeze_TimeStamp = niterations + 1
+
     for this_time in tqdm(range(niterations), desc='Running Simulation ', disable = disable_tqdm):
         junctionState.updateConductance()
         junctionConductance = junctionState.conductance
@@ -257,7 +266,12 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
         # sol = spsolve(LHS,RHS)
 
         sol = np.linalg.solve(lhs,rhs)
-        wireVoltage = sol[0:V]
+        if this_time >= freeze_TimeStamp:
+            others = np.setdiff1d(range(V), freeze_wire)
+            wireVoltage[others] = sol[others]
+        else:
+            wireVoltage = sol[0:V]
+
         junctionState.voltage = wireVoltage[edgeList[:,0]] - wireVoltage[edgeList[:,1]]
         junctionState.updateJunctionState(simulationOptions.dt)
 
@@ -296,7 +310,14 @@ def runSimulation(Connectivity,
                     f = 1, customSignal = None,
                     lite_mode = False, save_steps = 1,
                     findFirst = True,
-                    disable_tqdm = False):
+                    disable_tqdm = False,
+                    freeze_wire = None, freeze_junction = None, 
+                    freeze_TimeStamp = None):
+    """
+    **kwargs:
+        freeze_wire: freeze certain wire in propagation test.
+        freeze_TimeStamp: starting time point for freezing.
+    """
 
     SimulationOptions = simulation_options__(dt = dt, T = T,
                                             contactMode = contactMode,
@@ -313,8 +334,14 @@ def runSimulation(Connectivity,
     JunctionState = junctionState__(Connectivity.numOfJunctions, 
                                     mode = junctionMode, collapse = collapse, 
                                     criticalFlux=criticalFlux, maxFlux = maxFlux)
-
-    this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, lite_mode, disable_tqdm, save_steps)
+    
+    kwdict = dict()
+    if (freeze_wire != None) or (freeze_junction != None):
+        kwdict = dict(freeze_wire = freeze_wire,
+                    freeze_junction = freeze_junction, 
+                    freeze_TimeStamp = freeze_TimeStamp)
+        
+    this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, lite_mode, disable_tqdm, save_steps, **kwdict)
     
     if findFirst:
         from analysis.GraphTheory import findCurrent
@@ -344,10 +371,12 @@ def generateNetwork(numOfWires = 100, dispersion=100, mean_length = 100, this_se
     wires_dict = wires.detect_junctions(wires_dict)
     wires_dict = wires.generate_graph(wires_dict)
     if wires.check_connectedness(wires_dict):
+        logging.info(f'The returned network has {wires_dict["number_of_junctions"]} junctions.')
         return wires_dict
     elif iterations < max_iters: 
         generateNetwork(numOfWires, dispersion, mean_length, this_seed+1, iterations+1, max_iters)
     else:
+        logging.warning('No network is generated.')
         return None
 
 def findJunctionIndex(connectivity, wire1, wire2):
@@ -409,6 +438,19 @@ def inputPacker(func, *args, **kwargs):
         pack.append(raw[this_var])
     return pack
 
+# a version returns dict for later usage
+# def inputPacker(func, *args, **kwargs):
+#     import inspect
+#     from functools import partial
+#     out = dict()
+#     varnames = list(inspect.getfullargspec(func))[0]
+#     raw = inspect.getcallargs(func, *args, **kwargs)
+#     for this_var in varnames:
+#         out[this_var] = raw[this_var]
+#     for this_var in raw['kwargs']:
+#         out[this_var] = raw['kwargs'][this_var]
+#     return out
+
 def check_memory():
     import os
     import psutil
@@ -456,3 +498,16 @@ def getEffectiveRmat(network, this_TimeStamp = 0):
             Rmat[i,j] = getEffectiveResistance(network, this_TimeStamp, i, j)
     Rmat = Rmat+Rmat.T
     return Rmat
+
+def getWireCurrent(network, this_TimeStamp):
+    from analysis.GraphTheory import getDiGraph
+    diG = getDiGraph(network)
+    diMat = np.array(nx.adjacency_matrix(diG).todense())
+    wireCurrent = np.zeros(network.numOfWires)
+    junctionCurrent = network.junctionVoltage[this_TimeStamp,:]*network.junctionConductance[this_TimeStamp,:]
+    
+    for i in range(network.numOfWires):
+        outGoing = np.where(diMat[i,:])[0]
+        junctionIdx = [findJunctionIndex(network.connectivity, i, j) for j in outGoing]
+        wireCurrent[i] = np.sum(abs(junctionCurrent[junctionIdx]))
+    return wireCurrent
