@@ -8,7 +8,7 @@ if __name__ == '__main__':
                                                 electrodes = [72,29])
                                                 
         Connectivity = connectivity__(
-                                filename = '2016-09-08-155153_asn_nw_00100_nj_00261_seed_042_avl_100.00_disp_10.00.mat')
+                                filename = '100nw_261junctions.mat')
 
         # Connectivity = connectivity__(
         #     filename = '2016-09-08-155044_asn_nw_00700_nj_14533_seed_042_avl_100.00_disp_10.00.mat')
