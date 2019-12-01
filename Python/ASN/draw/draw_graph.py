@@ -69,7 +69,9 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         node_colors[i] = 'g'
     for i in drains:
         node_colors[i] = 'r'
-    plt.style.use('classic')
+
+    from utils import useMyRC
+    useMyRC()
 
     if ax == None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -107,6 +109,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
         nx.draw_networkx_edges(G, pos, width = 1, alpha = 0.15, ax=ax)
 
     ax.set_facecolor((0.8,0.8,0.8))
+    fig.set_facecolor((0.8,0.8,0.8))
     if edge_mode == 'custom':
         try:
             ax.set_title(f'Network at t = {np.round(TimeVector[this_TimeStamp],3)}')
