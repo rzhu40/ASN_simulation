@@ -1,11 +1,5 @@
-import os
 import sys
-# from pathlib import Path
-# file_path = Path(os.path.dirname(os.path.abspath(__file__)))
-# root = file_path.parent
-# print(root)
-# os.chdir(root)
-# sys.path.append('..')
+sys.path.append('..')
 
 import numpy as np 
 from ASN.utils import *

@@ -140,7 +140,7 @@ class stimulus__:
         elif biasType == 'Pulse':
             self.signal= (onAmp-offAmp)*((TimeVector % period) < period/2) + np.ones(TimeVector.size)*offAmp
         elif biasType == 'MKG':
-            from analysis.mkg import mkg_generator
+            from ASN.analysis.mkg import mkg_generator
             mkg_period = int(1/f/(TimeVector[1]-TimeVector[0]))
             self.signal = mkg_generator(TimeVector.size, dt = 100/mkg_period)*onAmp
         elif biasType == 'Custom': 
@@ -206,7 +206,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     edgeList = connectivity.edge_list
     rhs = np.zeros(V+numOfElectrodes)
 
-    import ASN.dataStruct 
+    import ASN.dataStruct as dataStruct
     Network = dataStruct.network__()
     sampling = np.arange(0, niterations, save_steps)
     if lite_mode:
@@ -344,7 +344,7 @@ def runSimulation(Connectivity,
     this_realization = simulateNetwork(SimulationOptions, Connectivity, JunctionState, lite_mode, disable_tqdm, save_steps, **kwdict)
     
     if findFirst:
-        from analysis.GraphTheory import findCurrent
+        from ASN.analysis.GraphTheory import findCurrent
 
         try:
             activation = findCurrent(this_realization, 1)
