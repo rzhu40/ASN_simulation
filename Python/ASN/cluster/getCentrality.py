@@ -1,12 +1,15 @@
 import os
-from pathlib import Path
-file_path = Path(os.path.dirname(os.path.realpath(__file__)))
-root = file_path.parent
-os.chdir(root)
+import sys
+# from pathlib import Path
+# file_path = Path(os.path.dirname(os.path.abspath(__file__)))
+# root = file_path.parent
+# print(root)
+# os.chdir(root)
+# sys.path.append('..')
 
 import numpy as np 
-from utils import *
-from analysis.GraphTheory import *
+from ASN.utils import *
+from ASN.analysis.GraphTheory import *
 import pickle
 
 if __name__ == '__main__':
@@ -16,5 +19,5 @@ if __name__ == '__main__':
     out = dict(junctionCent = get_junction_centrality(sim1, 0),
                 wireCent = get_wire_centrality(sim1, 0, mode='betweenness'))
 
-    with open('data/centralityTest.pkl', 'wb') as handle:
-        pickle.dump(out, handle, protocol = pickle.HIGHEST_PROTOCOL)
+    # with open('data/centralityTest.pkl', 'wb') as handle:
+    #     pickle.dump(out, handle, protocol = pickle.HIGHEST_PROTOCOL)

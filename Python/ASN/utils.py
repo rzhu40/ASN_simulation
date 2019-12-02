@@ -6,7 +6,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 from tqdm import tqdm
-from draw import *
+from ASN.draw import *
 
 class simulation_options__:
     def __init__(self, dt=1e-3, T=1e1,
