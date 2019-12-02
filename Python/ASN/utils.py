@@ -206,7 +206,7 @@ def simulateNetwork(simulationOptions, connectivity, junctionState, lite_mode = 
     edgeList = connectivity.edge_list
     rhs = np.zeros(V+numOfElectrodes)
 
-    import dataStruct 
+    import ASN.dataStruct 
     Network = dataStruct.network__()
     sampling = np.arange(0, niterations, save_steps)
     if lite_mode:

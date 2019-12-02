@@ -70,7 +70,7 @@ def draw_graph(network, ax = None, figsize=(10,10), edge_mode = 'current', color
     for i in drains:
         node_colors[i] = 'r'
 
-    from utils import useMyRC
+    from ASN.utils import useMyRC
     useMyRC()
 
     if ax == None:

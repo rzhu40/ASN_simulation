@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from jpype import *
 from tqdm import tqdm
-from utils import istarmap, inputPacker
+from ASN.utils import istarmap, inputPacker
 import warnings
 import os
 from pathlib import Path

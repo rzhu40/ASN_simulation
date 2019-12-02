@@ -271,7 +271,7 @@ def getCorrelation(network, this_TimeStamp = 0, perturbation_rate = 0.1):
     return corrMat
 
 def getWireInfluence(connectivity, nodeIdx, onAmp = 2, perturbeRate = 0.05, disable_tqdm = False, **kwargs):
-    from utils import inputPacker,runSimulation
+    from ASN.utils import inputPacker,runSimulation
     from multiprocessing import Pool
     from tqdm import tqdm
     import warnings
